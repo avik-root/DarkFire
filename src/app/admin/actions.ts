@@ -195,3 +195,45 @@ export async function updateAdminProfileAction(userId: string, data: z.infer<typ
         return { success: false, error: "Failed to update admin profile." };
     }
 }
+
+// --- Analytics Actions ---
+const analyticsFilePath = path.join(dataDir, 'analytics.json');
+
+type AnalyticsData = {
+    payloadsGenerated: number;
+    generationHistory: { month: string; generated: number }[];
+};
+
+async function readAnalyticsData(): Promise<AnalyticsData> {
+    const defaultData: AnalyticsData = {
+        payloadsGenerated: 0,
+        generationHistory: [
+            { "month": "Jan", "generated": 0 }, { "month": "Feb", "generated": 0 },
+            { "month": "Mar", "generated": 0 }, { "month": "Apr", "generated": 0 },
+            { "month": "May", "generated": 0 }, { "month": "Jun", "generated": 0 },
+            { "month": "Jul", "generated": 0 }, { "month": "Aug", "generated": 0 },
+            { "month": "Sep", "generated": 0 }, { "month": "Oct", "generated": 0 },
+            { "month": "Nov", "generated": 0 }, { "month": "Dec", "generated": 0 }
+        ]
+    };
+    try {
+        const data = await fs.readFile(analyticsFilePath, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            await fs.writeFile(analyticsFilePath, JSON.stringify(defaultData, null, 2), 'utf-8');
+            return defaultData;
+        }
+        console.error("Error reading analytics data file:", error);
+        return defaultData; // Fallback to default
+    }
+}
+
+export async function getAnalyticsDataAction() {
+    try {
+        const data = await readAnalyticsData();
+        return { success: true, data };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
