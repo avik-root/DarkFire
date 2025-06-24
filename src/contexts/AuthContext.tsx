@@ -14,12 +14,16 @@ interface AuthContextType {
   logout: () => void;
   signup: (data: any) => void;
   isAuthenticated: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const ADMIN_EMAIL = 'admin@darkfire.com';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,13 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    setLoading(false);
   }, []);
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const login = (data: { email: string }) => {
     const newUser = { email: data.email };
     localStorage.setItem('user', JSON.stringify(newUser));
     setUser(newUser);
-    router.push('/');
+    if (data.email === ADMIN_EMAIL) {
+        router.push('/admin/dashboard');
+    } else {
+        router.push('/');
+    }
   };
 
   const logout = () => {
@@ -50,8 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/');
   };
 
+  const value = { 
+    user, 
+    login, 
+    logout, 
+    signup, 
+    isAuthenticated: !loading && !!user, 
+    isAdmin: !loading && isAdmin 
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, signup, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

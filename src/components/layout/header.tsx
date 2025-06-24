@@ -1,12 +1,13 @@
+
 "use client";
 
 import Link from 'next/link';
-import { ShieldAlert, LogOut } from 'lucide-react';
+import { ShieldAlert, LogOut, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
 export default function Header() {
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout, user, isAdmin } = useAuth();
 
   return (
     <header className="py-4 px-8 border-b border-card">
@@ -19,6 +20,14 @@ export default function Header() {
           {isAuthenticated ? (
             <>
               <span className="text-sm text-muted-foreground">Welcome, {user?.email}</span>
+               {isAdmin && (
+                <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
+                  <Link href="/admin/dashboard">
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                </Button>
+              )}
               <Button onClick={logout} variant="outline" size="sm">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
