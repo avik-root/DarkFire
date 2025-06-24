@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import {
@@ -19,44 +18,14 @@ import {
 } from "@/components/ui/sidebar";
 import { ShieldAlert, LayoutDashboard, BarChart3, Users, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-
-function AdminSkeleton() {
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-                <ShieldAlert className="h-12 w-12 animate-pulse text-primary" />
-                <p className="text-muted-foreground">Verifying credentials...</p>
-            </div>
-        </div>
-    );
-}
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isAdmin, user } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const pathname = usePathname();
-  const [isVerified, setIsVerified] = useState(false);
-
-  useEffect(() => {
-    if (user === null && isAuthenticated === false) {
-      // Still loading auth state
-      return;
-    }
-    if (!isAuthenticated || !isAdmin) {
-      router.push('/login');
-    } else {
-      setIsVerified(true);
-    }
-  }, [isAuthenticated, isAdmin, user, router]);
-
-  if (!isVerified) {
-    return <AdminSkeleton />;
-  }
 
   return (
     <SidebarProvider defaultOpen>

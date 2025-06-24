@@ -4,6 +4,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { addUser as addUserToRegistry } from '@/services/userService';
+import Cookies from 'js-cookie';
+import { ADMIN_EMAIL, USER_COOKIE } from '@/lib/auth-constants';
 
 export interface User {
   email: string;
@@ -20,18 +22,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const ADMIN_EMAIL = 'admin@darkfire.com';
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem('user');
+    // Check if user is logged in from cookies
+    const storedUser = Cookies.get(USER_COOKIE);
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse user cookie", e);
+        Cookies.remove(USER_COOKIE);
+      }
     }
     setLoading(false);
   }, []);
@@ -40,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = (data: { email: string }) => {
     const newUser = { email: data.email };
-    localStorage.setItem('user', JSON.stringify(newUser));
+    Cookies.set(USER_COOKIE, JSON.stringify(newUser), { expires: 7 });
     setUser(newUser);
     if (data.email === ADMIN_EMAIL) {
         router.push('/admin/dashboard');
@@ -50,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
+    Cookies.remove(USER_COOKIE);
     setUser(null);
     router.push('/login');
   };
@@ -58,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = (data: { email: string }) => {
     const newUser = { email: data.email };
     addUserToRegistry(newUser);
-    localStorage.setItem('user', JSON.stringify(newUser));
+    Cookies.set(USER_COOKIE, JSON.stringify(newUser), { expires: 7 });
     setUser(newUser);
     router.push('/');
   };

@@ -13,7 +13,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useAuth, ADMIN_EMAIL } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { ADMIN_EMAIL } from "@/lib/auth-constants";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
