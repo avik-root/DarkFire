@@ -22,14 +22,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function ProfileSettings() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
   const handleUpdatePassword = (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder for functionality
+    // In a real app, this would call a server action
     toast({
       title: "Success",
       description: "Password updated successfully (simulation).",
@@ -37,12 +37,16 @@ export default function ProfileSettings() {
   };
   
   const handleDeleteAccount = () => {
-      // Placeholder for functionality
+    // In a real app, this would call a server action
     toast({
       variant: "destructive",
       title: "Account Deletion",
-      description: "Account deletion initiated (simulation).",
+      description: `Account for ${user?.email} has been deleted (simulation). Logging out...`,
     });
+    // Simulate logging out after deletion
+    setTimeout(() => {
+        logout();
+    }, 2000)
   }
 
   return (
@@ -90,7 +94,7 @@ export default function ProfileSettings() {
         <Card className="border-destructive">
             <CardHeader>
                 <CardTitle className="text-destructive">Danger Zone</CardTitle>
-                <CardDescription>These actions are permanent and cannot be undone.</CardDescription>
+                <CardDescription>This action is permanent and cannot be undone.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
@@ -99,7 +103,7 @@ export default function ProfileSettings() {
                 </div>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                         <Button variant="destructive">Delete My Account</Button>
+                         <Button variant="destructive" disabled={user?.role === 'admin'}>Delete My Account</Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                     <AlertDialogHeader>

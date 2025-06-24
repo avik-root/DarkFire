@@ -3,19 +3,16 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { addUser as addUserToRegistry } from '@/services/userService';
 import Cookies from 'js-cookie';
-import { ADMIN_EMAIL, USER_COOKIE } from '@/lib/auth-constants';
+import type { PublicUser } from '@/lib/auth';
+import { USER_COOKIE } from '@/lib/auth';
 
-export interface User {
-  email: string;
-}
 
 interface AuthContextType {
-  user: User | null;
-  login: (data: any) => void;
+  user: PublicUser | null;
+  login: (data: PublicUser) => void;
   logout: () => void;
-  signup: (data: any) => void;
+  signup: (data: PublicUser) => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
 }
@@ -23,16 +20,16 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in from cookies
     const storedUser = Cookies.get(USER_COOKIE);
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
       } catch (e) {
         console.error("Failed to parse user cookie", e);
         Cookies.remove(USER_COOKIE);
@@ -41,13 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = user?.role === 'admin';
 
-  const login = (data: { email: string }) => {
-    const newUser = { email: data.email };
-    Cookies.set(USER_COOKIE, JSON.stringify(newUser), { expires: 7 });
-    setUser(newUser);
-    if (data.email === ADMIN_EMAIL) {
+  const login = (userData: PublicUser) => {
+    Cookies.set(USER_COOKIE, JSON.stringify(userData), { expires: 7 });
+    setUser(userData);
+    if (userData.role === 'admin') {
         router.push('/admin/dashboard');
     } else {
         router.push('/playground');
@@ -60,11 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
   
-  const signup = (data: { email: string }) => {
-    const newUser = { email: data.email };
-    addUserToRegistry(newUser);
-    Cookies.set(USER_COOKIE, JSON.stringify(newUser), { expires: 7 });
-    setUser(newUser);
+  const signup = (userData: PublicUser) => {
+    Cookies.set(USER_COOKIE, JSON.stringify(userData), { expires: 7 });
+    setUser(userData);
     router.push('/playground');
   };
 

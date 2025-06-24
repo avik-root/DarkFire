@@ -15,19 +15,36 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { loginAction } from "./actions";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const router = useRouter();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login({ email, password });
+    setIsLoading(true);
+
+    const result = await loginAction({ email, password });
+    
+    setIsLoading(false);
+
+    if (result.success && result.user) {
+      toast({ title: "Success", description: result.message });
+      login(result.user);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: result.message,
+      });
+    }
   };
 
   return (
@@ -67,7 +84,10 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col">
-          <Button type="submit" className="w-full bg-accent hover:bg-accent/90">Sign in</Button>
+          <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isLoading}>
+            {isLoading && <Loader2 className="animate-spin" />}
+            Sign in
+          </Button>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="underline hover:text-primary">

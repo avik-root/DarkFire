@@ -19,7 +19,7 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <>
-              <span className="text-sm text-muted-foreground hidden md:inline">Welcome, {user?.email}</span>
+              <span className="text-sm text-muted-foreground hidden md:inline">Welcome, {user?.name}</span>
                {isAdmin ? (
                 <Button asChild variant="ghost" size="sm">
                   <Link href="/admin/dashboard">

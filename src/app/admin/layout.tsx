@@ -78,11 +78,11 @@ export default function AdminLayout({
           <div className="flex items-center gap-3 p-2">
              <Avatar>
                 <AvatarImage src={`https://i.pravatar.cc/150?u=${user?.email}`} />
-                <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{user?.name?.[0].toUpperCase()}</AvatarFallback>
              </Avatar>
              <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-semibold truncate">{user?.email}</span>
-                <span className="text-xs text-muted-foreground">Administrator</span>
+                <span className="text-sm font-semibold truncate">{user?.name}</span>
+                <span className="text-xs text-muted-foreground capitalize">{user?.role}</span>
              </div>
           </div>
         </SidebarFooter>
