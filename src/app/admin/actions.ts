@@ -40,14 +40,17 @@ type TeamMember = {
   handle: string;
   bio: string;
   hint: string;
+  github?: string;
+  linkedin?: string;
+  email?: string;
 };
+
 
 async function readTeamData(): Promise<TeamMember[]> {
   try {
     const data = await fs.readFile(teamFilePath, 'utf-8');
     return JSON.parse(data);
   } catch (error) {
-    // If file doesn't exist, return empty array.
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return [];
     }
@@ -70,27 +73,55 @@ export async function getTeamMembersAction() {
     }
 }
 
-export async function updateTeamMemberAction(handle: string, avatarDataUrl: string) {
+const TeamMemberUpdateSchema = z.object({
+  handle: z.string(),
+  name: z.string().min(1, 'Name cannot be empty.'),
+  role: z.string().min(1, 'Role cannot be empty.'),
+  bio: z.string().min(10, 'Bio must be at least 10 characters.'),
+  avatar: z.string().optional(), // Data URL for new avatar
+  github: z.string().url().or(z.literal('')).optional(),
+  linkedin: z.string().url().or(z.literal('')).optional(),
+  email: z.string().email().or(z.literal('')).optional(),
+});
+export type TeamMemberUpdateInput = z.infer<typeof TeamMemberUpdateSchema>;
+
+
+export async function updateTeamMemberAction(data: TeamMemberUpdateInput) {
     try {
-        if (!avatarDataUrl.startsWith('data:image/')) {
-            return { success: false, error: 'Invalid image data provided.' };
+        const result = TeamMemberUpdateSchema.safeParse(data);
+        if (!result.success) {
+            return { success: false, error: result.error.errors.map(e => e.message).join(', ') };
         }
 
         const team = await readTeamData();
-        const memberIndex = team.findIndex(m => m.handle === handle);
+        const memberIndex = team.findIndex(m => m.handle === data.handle);
 
         if (memberIndex === -1) {
             return { success: false, error: 'Team member not found.' };
         }
+        
+        const memberToUpdate = team[memberIndex];
 
-        team[memberIndex].avatar = avatarDataUrl;
+        memberToUpdate.name = data.name;
+        memberToUpdate.role = data.role;
+        memberToUpdate.bio = data.bio;
+        memberToUpdate.github = data.github;
+        memberToUpdate.linkedin = data.linkedin;
+        memberToUpdate.email = data.email;
+
+        if (data.avatar && data.avatar.startsWith('data:image/')) {
+            memberToUpdate.avatar = data.avatar;
+        }
+
+        team[memberIndex] = memberToUpdate;
         await writeTeamData(team);
 
-        return { success: true, member: team[memberIndex] };
+        return { success: true, member: team[memberIndex], message: 'Team member updated successfully.' };
     } catch (error: any) {
-        return { success: false, error: `Failed to update avatar: ${error.message}` };
+        return { success: false, error: `Failed to update team member: ${error.message}` };
     }
 }
+
 
 // --- Settings Actions ---
 const settingsFilePath = path.join(dataDir, 'settings.json');

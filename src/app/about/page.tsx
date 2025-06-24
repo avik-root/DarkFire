@@ -13,6 +13,9 @@ type TeamMember = {
   handle: string;
   bio: string;
   hint: string;
+  github?: string;
+  linkedin?: string;
+  email?: string;
 };
 
 async function getTeamMembers(): Promise<TeamMember[]> {
@@ -103,9 +106,12 @@ export default async function AboutPage({}: {}) {
                 handle={member.handle}
                 avatarUrl={member.avatar}
                 miniAvatarUrl={member.avatar}
-                contactText="View Profile"
                 showUserInfo={true}
                 dataAiHint={member.hint}
+                github={member.github}
+                linkedin={member.linkedin}
+                email={member.email}
+                bio={member.bio}
               />
           ))}
         </div>

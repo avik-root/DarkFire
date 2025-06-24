@@ -6,7 +6,10 @@
     "avatar": "https://placehold.co/400x560.png",
     "handle": "alexvoid",
     "bio": "The mastermind behind DarkFire's core AI. Alex has a decade of experience in machine learning and a passion for pushing the boundaries of generative models.",
-    "hint": "male hacker"
+    "hint": "male hacker",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "email": "alex.void@darkfire.dev"
   },
   {
     "name": "Jasmine 'Proxy' Chen",
@@ -14,6 +17,9 @@
     "avatar": "https://placehold.co/400x560.png",
     "handle": "jasmineproxy",
     "bio": "Jasmine ensures our generated payloads are effective and relevant. A world-renowned ethical hacker, she leads our threat intelligence team.",
-    "hint": "female hacker"
+    "hint": "female hacker",
+    "github": "https://github.com",
+    "linkedin": "https://linkedin.com",
+    "email": "jasmine.proxy@darkfire.dev"
   }
 ]

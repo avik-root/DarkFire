@@ -1,6 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useCallback, useMemo, FC } from "react";
+import { Github, Linkedin, Mail, Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const DEFAULT_BEHIND_GRADIENT =
   "radial-gradient(farthest-side circle at var(--pointer-x) var(--pointer-y),hsla(266,100%,90%,var(--card-opacity)) 4%,hsla(266,50%,80%,calc(var(--card-opacity)*0.75)) 10%,hsla(266,25%,70%,calc(var(--card-opacity)*0.5)) 50%,hsla(266,0%,60%,0) 100%),radial-gradient(35% 52% at 55% 20%,#00ffaac4 0%,#073aff00 100%),radial-gradient(100% 100% at 50% 50%,#00c1ffff 1%,#073aff00 76%),conic-gradient(from 124deg at 50% 50%,#c137ffff 0%,#07c6ffff 40%,#07c6ffff 60%,#c137ffff 100%)";
@@ -47,10 +54,12 @@ interface ProfileCardProps {
   title?: string;
   handle?: string;
   status?: string;
-  contactText?: string;
   showUserInfo?: boolean;
-  onContactClick?: () => void;
   dataAiHint?: string;
+  bio?: string;
+  github?: string;
+  linkedin?: string;
+  email?: string;
 }
 
 
@@ -68,10 +77,12 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
   title = "Software Engineer",
   handle = "javicodes",
   status = "Online",
-  contactText = "Contact",
   showUserInfo = true,
-  onContactClick,
-  dataAiHint
+  dataAiHint,
+  bio,
+  github,
+  linkedin,
+  email,
 }) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
@@ -258,10 +269,6 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
     [iconUrl, grainUrl, showBehindGradient, behindGradient, innerGradient]
   );
 
-  const handleContactClick = useCallback(() => {
-    onContactClick?.();
-  }, [onContactClick]);
-
   return (
     <div
       ref={wrapRef}
@@ -313,16 +320,36 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
                   <div className="pc-handle">@{handle}</div>
                   <div className="pc-status">{status}</div>
                 </div>
+                {bio && (
+                  <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                          <TooltipTrigger className="pointer-events-auto">
+                              <Info className="h-4 w-4 text-white/60" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs bg-black/80 text-white border-white/20" side="top" align="start">
+                              <p className="text-sm">{bio}</p>
+                          </TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
-              <button
-                className="pc-contact-btn"
-                onClick={handleContactClick}
-                style={{ pointerEvents: "auto" }}
-                type="button"
-                aria-label={`Contact ${name || "user"}`}
-              >
-                {contactText}
-              </button>
+              <div className="pc-social-links">
+                {github && (
+                  <a href={github} target="_blank" rel="noopener noreferrer" aria-label="GitHub profile">
+                    <Github />
+                  </a>
+                )}
+                {linkedin && (
+                  <a href={linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile">
+                    <Linkedin />
+                  </a>
+                )}
+                {email && (
+                  <a href={`mailto:${email}`} aria-label="Email">
+                    <Mail />
+                  </a>
+                )}
+              </div>
             </div>
           )}
         </div>

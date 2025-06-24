@@ -2,6 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Loader2 } from "lucide-react";
@@ -20,11 +23,32 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
+const teamMemberUpdateSchema = z.object({
+  name: z.string().min(1, 'Name cannot be empty.'),
+  role: z.string().min(1, 'Role cannot be empty.'),
+  bio: z.string().min(10, 'Bio must be at least 10 characters.'),
+  github: z.string().url('Must be a valid URL.').or(z.literal('')).optional(),
+  linkedin: z.string().url('Must be a valid URL.').or(z.literal('')).optional(),
+  email: z.string().email('Must be a valid email.').or(z.literal('')).optional(),
+});
+type TeamMemberUpdateFormValues = z.infer<typeof teamMemberUpdateSchema>;
 
 type TeamMember = {
   name: string;
@@ -33,6 +57,9 @@ type TeamMember = {
   handle: string;
   bio: string;
   hint: string;
+  github?: string;
+  linkedin?: string;
+  email?: string;
 };
 
 export default function UserManagementPage() {
@@ -44,6 +71,10 @@ export default function UserManagementPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
+  
+  const form = useForm<TeamMemberUpdateFormValues>({
+    resolver: zodResolver(teamMemberUpdateSchema),
+  });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -71,6 +102,19 @@ export default function UserManagementPage() {
     fetchUsers();
     fetchTeam();
   }, [toast]);
+  
+  useEffect(() => {
+    if (editingMember) {
+      form.reset({
+        name: editingMember.name,
+        role: editingMember.role,
+        bio: editingMember.bio,
+        github: editingMember.github || '',
+        linkedin: editingMember.linkedin || '',
+        email: editingMember.email || '',
+      });
+    }
+  }, [editingMember, form]);
 
   const handleDeleteUser = async (email: string) => {
     const result = await deleteUserAction(email);
@@ -101,30 +145,40 @@ export default function UserManagementPage() {
         setSelectedFile(file);
     }
   }
-
-  const handleUpdateAvatar = async () => {
-    if (!editingMember || !selectedFile) return;
-    
+  
+  const onUpdateSubmit = async (values: TeamMemberUpdateFormValues) => {
+    if (!editingMember) return;
     setIsUpdating(true);
 
-    try {
-        const imageDataUrl = await fileToBase64(selectedFile);
-        const result = await updateTeamMemberAction(editingMember.handle, imageDataUrl);
-        
-        if (result.success) {
-          toast({ title: "Success", description: "Team member avatar updated." });
-          fetchTeam();
-          setEditingMember(null);
-          setSelectedFile(null);
-        } else {
-          toast({ variant: "destructive", title: "Error", description: result.error });
-        }
-    } catch (error) {
+    let avatarDataUrl: string | undefined;
+    if (selectedFile) {
+      try {
+        avatarDataUrl = await fileToBase64(selectedFile);
+      } catch (error) {
         toast({ variant: "destructive", title: "Error", description: "Failed to process image file." });
-    } finally {
         setIsUpdating(false);
+        return;
+      }
     }
+
+    const result = await updateTeamMemberAction({
+      handle: editingMember.handle,
+      ...values,
+      avatar: avatarDataUrl,
+    });
+
+    if (result.success) {
+      toast({ title: "Success", description: result.message });
+      fetchTeam();
+      setEditingMember(null);
+      setSelectedFile(null);
+    } else {
+      toast({ variant: "destructive", title: "Error", description: result.error });
+    }
+    
+    setIsUpdating(false);
   };
+
 
   return (
     <div className="space-y-8 opacity-0 animate-fade-in-up">
@@ -204,7 +258,7 @@ export default function UserManagementPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Team Profile Management</CardTitle>
-                <CardDescription>Update avatars for the "About Us" page.</CardDescription>
+                <CardDescription>Update profiles for the "About Us" page.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -238,42 +292,59 @@ export default function UserManagementPage() {
                             <TableCell className="font-medium">{member.name}</TableCell>
                             <TableCell>{member.role}</TableCell>
                             <TableCell className="text-right">
-                              <AlertDialog open={editingMember?.handle === member.handle} onOpenChange={(isOpen) => {
-                                  if (!isOpen) {
-                                      setEditingMember(null);
-                                      setSelectedFile(null);
-                                  }
+                              <Dialog open={editingMember?.handle === member.handle} onOpenChange={(isOpen) => {
+                                if (!isOpen) { setEditingMember(null); setSelectedFile(null); }
                               }}>
-                                <AlertDialogTrigger asChild>
+                                <DialogTrigger asChild>
                                   <Button variant="outline" onClick={() => setEditingMember(member)}>Edit</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Edit {editingMember?.name}</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Upload a new avatar. Max file size: 2MB.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <div className="grid gap-4 py-4">
-                                      <div className="grid w-full max-w-sm items-center gap-1.5">
-                                        <Label htmlFor="picture">Picture</Label>
-                                        <Input id="picture" type="file" accept="image/png, image/jpeg" onChange={handleFileChange} />
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Edit {member.name}</DialogTitle>
+                                    <DialogDescription>
+                                      Update team member details. Click save when you're done.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(onUpdateSubmit)} className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          <FormField control={form.control} name="name" render={({ field }) => (
+                                              <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                          )} />
+                                          <FormField control={form.control} name="role" render={({ field }) => (
+                                              <FormItem><FormLabel>Role</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                          )} />
                                       </div>
-                                      {selectedFile && (
-                                        <div className="mt-2 text-sm text-muted-foreground">
-                                          Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
-                                        </div>
-                                      )}
-                                  </div>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleUpdateAvatar} disabled={!selectedFile || isUpdating}>
-                                        {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Save Changes
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                                       <FormField control={form.control} name="bio" render={({ field }) => (
+                                          <FormItem><FormLabel>Description / Bio</FormLabel><FormControl><Textarea className="resize-y" {...field} /></FormControl><FormMessage /></FormItem>
+                                      )} />
+                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          <FormField control={form.control} name="github" render={({ field }) => (
+                                              <FormItem><FormLabel>GitHub URL</FormLabel><FormControl><Input placeholder="https://github.com/username" {...field} /></FormControl><FormMessage /></FormItem>
+                                          )} />
+                                          <FormField control={form.control} name="linkedin" render={({ field }) => (
+                                              <FormItem><FormLabel>LinkedIn URL</FormLabel><FormControl><Input placeholder="https://linkedin.com/in/username" {...field} /></FormControl><FormMessage /></FormItem>
+                                          )} />
+                                      </div>
+                                      <FormField control={form.control} name="email" render={({ field }) => (
+                                          <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="member@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                                      )} />
+                                      <div className="space-y-2">
+                                        <Label htmlFor="picture">New Avatar</Label>
+                                        <Input id="picture" type="file" accept="image/png, image/jpeg" onChange={handleFileChange} />
+                                        {selectedFile && <div className="text-sm text-muted-foreground">Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</div>}
+                                      </div>
+                                      <DialogFooter>
+                                        <DialogClose asChild><Button type="button" variant="secondary" onClick={() => setEditingMember(null)}>Cancel</Button></DialogClose>
+                                        <Button type="submit" disabled={isUpdating}>
+                                            {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Save Changes
+                                        </Button>
+                                      </DialogFooter>
+                                    </form>
+                                  </Form>
+                                </DialogContent>
+                              </Dialog>
                             </TableCell>
                         </TableRow>
                       ))) : (
