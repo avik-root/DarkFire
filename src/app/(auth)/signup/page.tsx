@@ -13,9 +13,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, ADMIN_EMAIL } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SignupPage() {
   const { signup } = useAuth();
@@ -23,9 +24,22 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { toast } = useToast();
+
+  const isTryingAdminSignup = email.toLowerCase() === ADMIN_EMAIL;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isTryingAdminSignup) {
+      toast({
+        variant: "destructive",
+        title: "Registration Error",
+        description: "This email address is reserved and cannot be used for signup.",
+      });
+      return;
+    }
+
     // In a real app, you'd want to check if passwords match here.
     signup({ email });
   };
@@ -81,7 +95,7 @@ export default function SignupPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col">
-          <Button type="submit" className="w-full bg-accent hover:bg-accent/90">Create account</Button>
+          <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isTryingAdminSignup}>Create account</Button>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <Link href="/login" className="underline hover:text-primary">
