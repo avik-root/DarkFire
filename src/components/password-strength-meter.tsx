@@ -29,6 +29,10 @@ export default function PasswordStrengthMeter({ password = "" }: PasswordStrengt
     }
   }, [password]);
 
+  if (!password) {
+    return null; // Don't render anything if there's no password
+  }
+
   const strength = STRENGTH_LEVELS[score];
 
   return (
