@@ -1,20 +1,21 @@
-
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ShieldAlert, Users, Target } from "lucide-react";
 import Image from "next/image";
+import ProfileCard from "@/components/profile-card";
+import "@/components/ProfileCard.css";
 
 const teamMembers = [
   {
     name: "Alex 'Void' Thompson",
     role: "Lead AI Architect",
-    avatar: "https://i.pravatar.cc/150?u=alex",
+    avatar: "https://i.pravatar.cc/300?u=alex",
+    handle: "alexvoid",
     bio: "The mastermind behind DarkFire's core AI. Alex has a decade of experience in machine learning and a passion for pushing the boundaries of generative models.",
   },
   {
     name: "Jasmine 'Proxy' Chen",
     role: "Head of Security Research",
-    avatar: "https://i.pravatar.cc/150?u=jasmine",
+    avatar: "https://i.pravatar.cc/300?u=jasmine",
+    handle: "jasmineproxy",
     bio: "Jasmine ensures our generated payloads are effective and relevant. A world-renowned ethical hacker, she leads our threat intelligence team.",
   },
 ];
@@ -84,21 +85,18 @@ export default function AboutPage() {
             The architects behind the fire.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-stretch lg:max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 justify-items-center lg:max-w-4xl mx-auto">
           {teamMembers.map((member) => (
-             <Card key={member.name} className="bg-card/50 text-center flex flex-col">
-              <CardHeader className="items-center pt-6">
-                <Avatar className="w-24 h-24 mb-4 border-4 border-primary/50">
-                  <AvatarImage src={member.avatar} />
-                  <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <CardTitle className="font-headline text-xl">{member.name}</CardTitle>
-                <CardDescription className="text-primary font-semibold text-sm pt-1">{member.role}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mt-2 text-sm">{member.bio}</p>
-              </CardContent>
-            </Card>
+             <ProfileCard
+                key={member.name}
+                name={member.name}
+                title={member.role}
+                handle={member.handle}
+                avatarUrl={member.avatar}
+                miniAvatarUrl={member.avatar}
+                contactText="View Profile"
+                showUserInfo={true}
+              />
           ))}
         </div>
       </section>
