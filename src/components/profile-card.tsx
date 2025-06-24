@@ -50,6 +50,7 @@ interface ProfileCardProps {
   contactText?: string;
   showUserInfo?: boolean;
   onContactClick?: () => void;
+  dataAiHint?: string;
 }
 
 
@@ -70,6 +71,7 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
   contactText = "Contact",
   showUserInfo = true,
   onContactClick,
+  dataAiHint
 }) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
@@ -284,6 +286,7 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
               src={avatarUrl}
               alt={`${name || "User"} avatar`}
               loading="lazy"
+              data-ai-hint={dataAiHint}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";

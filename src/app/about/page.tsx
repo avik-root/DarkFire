@@ -7,16 +7,18 @@ const teamMembers = [
   {
     name: "Alex 'Void' Thompson",
     role: "Lead AI Architect",
-    avatar: "https://i.pravatar.cc/300?u=alex",
+    avatar: "https://placehold.co/400x560.png",
     handle: "alexvoid",
     bio: "The mastermind behind DarkFire's core AI. Alex has a decade of experience in machine learning and a passion for pushing the boundaries of generative models.",
+    hint: "male hacker"
   },
   {
     name: "Jasmine 'Proxy' Chen",
     role: "Head of Security Research",
-    avatar: "https://i.pravatar.cc/300?u=jasmine",
+    avatar: "https://placehold.co/400x560.png",
     handle: "jasmineproxy",
     bio: "Jasmine ensures our generated payloads are effective and relevant. A world-renowned ethical hacker, she leads our threat intelligence team.",
+    hint: "female hacker"
   },
 ];
 
@@ -96,6 +98,7 @@ export default function AboutPage() {
                 miniAvatarUrl={member.avatar}
                 contactText="View Profile"
                 showUserInfo={true}
+                dataAiHint={member.hint}
               />
           ))}
         </div>
