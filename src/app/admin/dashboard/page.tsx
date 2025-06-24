@@ -9,7 +9,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Users, Bot, TrendingUp, ShieldAlert, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getUsersAction, deleteUserAction } from "@/app/admin/actions";
-import type { PublicUser } from "@/lib/auth";
+import type { PublicUser } from "@/lib/auth-shared";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,

@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { USER_COOKIE } from '@/lib/auth';
+import { USER_COOKIE } from '@/lib/auth-shared';
 
 export function middleware(request: NextRequest) {
   const userCookie = request.cookies.get(USER_COOKIE);

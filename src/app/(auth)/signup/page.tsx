@@ -27,8 +27,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { signupAction } from "./actions";
-import { CreateUserSchema } from "@/lib/auth";
+import { signupAction } from "../actions";
+import { CreateUserSchema } from "@/lib/auth-shared";
 import PasswordStrengthMeter from "@/components/password-strength-meter";
 
 type SignupFormValues = z.infer<typeof CreateUserSchema>;

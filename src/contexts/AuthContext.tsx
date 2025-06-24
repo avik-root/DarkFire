@@ -4,8 +4,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
-import type { PublicUser } from '@/lib/auth';
-import { USER_COOKIE } from '@/lib/auth';
+import type { PublicUser } from '@/lib/auth-shared';
+import { USER_COOKIE } from '@/lib/auth-shared';
 
 
 interface AuthContextType {

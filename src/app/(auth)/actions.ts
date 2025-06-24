@@ -2,7 +2,8 @@
 "use server";
 
 import { z } from "zod";
-import { addUser, verifyUser, CreateUserSchema } from "@/lib/auth";
+import { addUser, verifyUser } from "@/lib/auth";
+import { CreateUserSchema } from "@/lib/auth-shared";
 
 export async function signupAction(data: unknown): Promise<{ success: boolean; message: string; user?: any }> {
   const result = CreateUserSchema.safeParse(data);
