@@ -1,28 +1,35 @@
+
 import { ShieldAlert, Users, Target } from "lucide-react";
 import Image from "next/image";
 import ProfileCard from "@/components/profile-card";
 import "@/components/ProfileCard.css";
+import fs from 'fs/promises';
+import path from 'path';
 
-const teamMembers = [
-  {
-    name: "Alex 'Void' Thompson",
-    role: "Lead AI Architect",
-    avatar: "https://placehold.co/400x560.png",
-    handle: "alexvoid",
-    bio: "The mastermind behind DarkFire's core AI. Alex has a decade of experience in machine learning and a passion for pushing the boundaries of generative models.",
-    hint: "male hacker"
-  },
-  {
-    name: "Jasmine 'Proxy' Chen",
-    role: "Head of Security Research",
-    avatar: "https://placehold.co/400x560.png",
-    handle: "jasmineproxy",
-    bio: "Jasmine ensures our generated payloads are effective and relevant. A world-renowned ethical hacker, she leads our threat intelligence team.",
-    hint: "female hacker"
-  },
-];
+type TeamMember = {
+  name: string;
+  role: string;
+  avatar: string;
+  handle: string;
+  bio: string;
+  hint: string;
+};
 
-export default function AboutPage() {
+async function getTeamMembers(): Promise<TeamMember[]> {
+  const filePath = path.join(process.cwd(), 'src', 'data', 'team.json');
+  try {
+    const data = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("Could not read team data:", error);
+    return [];
+  }
+}
+
+
+export default async function AboutPage() {
+  const teamMembers = await getTeamMembers();
+
   return (
     <div className="space-y-16 opacity-0 animate-fade-in-up">
       <section className="text-center">
