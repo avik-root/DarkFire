@@ -1,12 +1,17 @@
 
 "use server";
 
-import { getUsers as getUsersFromFile, deleteUserByEmail } from "@/lib/auth";
 import fs from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { getUsers as getUsersFromFile, deleteUserByEmail } from "@/lib/auth";
+import type { PublicUser, UpdateAdminSchema } from "@/lib/auth-shared";
+import type { User } from '@/lib/auth-shared';
 
-// User Management Actions
+const dataDir = path.join(process.cwd(), 'src', 'data');
+
+// --- User Management Actions ---
 export async function getUsersAction() {
     try {
         const users = await getUsersFromFile();
@@ -25,9 +30,8 @@ export async function deleteUserAction(email: string) {
     }
 }
 
-
-// Team Management Actions
-const teamFilePath = path.join(process.cwd(), 'src', 'data', 'team.json');
+// --- Team Management Actions ---
+const teamFilePath = path.join(dataDir, 'team.json');
 
 type TeamMember = {
   name: string;
@@ -43,6 +47,10 @@ async function readTeamData(): Promise<TeamMember[]> {
     const data = await fs.readFile(teamFilePath, 'utf-8');
     return JSON.parse(data);
   } catch (error) {
+    // If file doesn't exist, return empty array.
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
     console.error("Error reading team data file:", error);
     return [];
   }
@@ -84,7 +92,41 @@ export async function updateTeamMemberAction(handle: string, avatarDataUrl: stri
     }
 }
 
-// Settings Actions
+// --- Settings Actions ---
+const settingsFilePath = path.join(dataDir, 'settings.json');
+const usersFilePath = path.join(dataDir, 'users.json');
+const adminFilePath = path.join(dataDir, 'admin.json');
+
+type AppSettings = {
+    maintenanceMode: boolean;
+    allowRegistrations: boolean;
+    apiKey: string;
+};
+
+async function readSettingsData(): Promise<AppSettings> {
+    try {
+        const data = await fs.readFile(settingsFilePath, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        // Fallback to default settings if file doesn't exist or is invalid
+        return { maintenanceMode: false, allowRegistrations: true, apiKey: "" };
+    }
+}
+
+async function writeSettingsData(data: AppSettings): Promise<void> {
+    await fs.writeFile(settingsFilePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+
+export async function getSettingsAction() {
+    try {
+        const settings = await readSettingsData();
+        return { success: true, settings };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
 const SettingsSchema = z.object({
     maintenanceMode: z.boolean(),
     allowRegistrations: z.boolean(),
@@ -96,11 +138,52 @@ export async function saveSettingsAction(data: unknown) {
     if (!result.success) {
         return { success: false, error: "Invalid data provided." };
     }
+    
+    try {
+        await writeSettingsData(result.data as AppSettings);
+        return { success: true, message: "Settings saved successfully!" };
+    } catch (error: any) {
+        return { success: false, error: "Failed to save settings." };
+    }
+}
 
-    // In a real application, you would save these settings to a database
-    // or a secure configuration store. For this prototype, we'll just
-    // simulate success without persisting the data.
-    console.log("Simulating saving settings:", result.data);
+export async function resetApplicationDataAction() {
+    try {
+        await fs.writeFile(usersFilePath, JSON.stringify([], null, 2), 'utf-8');
+        return { success: true, message: "Non-admin user data has been cleared." };
+    } catch (error: any) {
+        return { success: false, error: "Failed to reset application data." };
+    }
+}
 
-    return { success: true, message: "Settings saved successfully!" };
+export async function updateAdminProfileAction(userId: string, data: z.infer<typeof UpdateAdminSchema>) {
+    try {
+        const admins = JSON.parse(await fs.readFile(adminFilePath, 'utf-8')) as User[];
+        const adminIndex = admins.findIndex(admin => admin.id === userId);
+
+        if (adminIndex === -1) {
+            return { success: false, error: "Admin user not found." };
+        }
+
+        const adminToUpdate = admins[adminIndex];
+        
+        // Update name and email
+        adminToUpdate.name = data.name;
+        adminToUpdate.email = data.email;
+
+        // Update password if a new one is provided
+        if (data.password && data.password.length > 0) {
+            adminToUpdate.password = await bcrypt.hash(data.password, 10);
+        }
+
+        admins[adminIndex] = adminToUpdate;
+        await fs.writeFile(adminFilePath, JSON.stringify(admins, null, 2), 'utf-8');
+        
+        const { password, ...publicUser } = adminToUpdate;
+
+        return { success: true, user: publicUser, message: "Admin profile updated successfully." };
+
+    } catch (error: any) {
+        return { success: false, error: "Failed to update admin profile." };
+    }
 }

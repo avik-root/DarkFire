@@ -1,15 +1,21 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { saveSettingsAction } from "@/app/admin/actions";
+import { useAuth } from "@/contexts/AuthContext";
+import { getSettingsAction, saveSettingsAction, resetApplicationDataAction, updateAdminProfileAction } from "@/app/admin/actions";
 import { Loader2 } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { UpdateAdminSchema } from "@/lib/auth-shared";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,129 +27,203 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import PasswordStrengthMeter from "@/components/password-strength-meter";
+
+type AdminProfileFormValues = z.infer<typeof UpdateAdminSchema>;
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
+    const { user, updateUser } = useAuth();
+    
+    // Loading states
+    const [isFetchingSettings, setIsFetchingSettings] = useState(true);
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+    const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
+    // General Settings state
     const [maintenanceMode, setMaintenanceMode] = useState(false);
     const [allowRegistrations, setAllowRegistrations] = useState(true);
-    const [apiKey, setApiKey] = useState("pk_****************");
+    const [apiKey, setApiKey] = useState("");
+
+    const form = useForm<AdminProfileFormValues>({
+        resolver: zodResolver(UpdateAdminSchema),
+        defaultValues: { name: "", email: "", password: "" },
+    });
+    
+    const passwordForStrengthMeter = form.watch("password");
+
+    useEffect(() => {
+        // Fetch initial general settings
+        const fetchSettings = async () => {
+            setIsFetchingSettings(true);
+            const result = await getSettingsAction();
+            if (result.success && result.settings) {
+                setMaintenanceMode(result.settings.maintenanceMode);
+                setAllowRegistrations(result.settings.allowRegistrations);
+                setApiKey(result.settings.apiKey);
+            } else {
+                toast({ variant: "destructive", title: "Error", description: "Could not load application settings." });
+            }
+            setIsFetchingSettings(false);
+        };
+
+        fetchSettings();
+
+        // Populate admin profile form with current user data
+        if (user) {
+            form.reset({
+                name: user.name,
+                email: user.email,
+                password: "",
+            });
+        }
+
+    }, [user, form, toast]);
+
+    const onAdminProfileSubmit = async (data: AdminProfileFormValues) => {
+        if (!user) return;
+        setIsUpdatingProfile(true);
+
+        const result = await updateAdminProfileAction(user.id, data);
+
+        if (result.success && result.user) {
+            toast({ title: "Success", description: result.message });
+            updateUser(result.user); // Update user in auth context
+            form.reset({ ...data, password: "" }); // Reset form, clear password field
+        } else {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        }
+        setIsUpdatingProfile(false);
+    };
 
     const handleSaveChanges = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-
-        const settings = {
-            maintenanceMode,
-            allowRegistrations,
-            apiKey
-        };
-
+        setIsSavingSettings(true);
+        const settings = { maintenanceMode, allowRegistrations, apiKey };
         const result = await saveSettingsAction(settings);
 
         if (result.success) {
             toast({ title: "Success", description: result.message });
         } else {
-            toast({ variant: "destructive", title: "Error", description: result.error || "An unknown error occurred." });
+            toast({ variant: "destructive", title: "Error", description: result.error });
         }
-
-        setIsLoading(false);
+        setIsSavingSettings(false);
     };
 
-    const handleResetData = () => {
+    const handleResetData = async () => {
         setIsResetting(true);
-        // In a real app, this would be a server action that clears data.
-        // We'll simulate it with a toast.
-        toast({
-            variant: "destructive",
-            title: "Data Reset (Simulation)",
-            description: "Application data has been cleared.",
-        });
-        setTimeout(() => setIsResetting(false), 1500);
+        const result = await resetApplicationDataAction();
+        if (result.success) {
+             toast({ title: "Success", description: result.message });
+        } else {
+             toast({ variant: "destructive", title: "Error", description: result.error });
+        }
+        setIsResetting(false);
     }
 
   return (
     <div className="space-y-8 opacity-0 animate-fade-in-up">
-      <h1 className="text-4xl font-headline tracking-tighter">Admin Settings</h1>
-      
-      <form onSubmit={handleSaveChanges}>
+        <h1 className="text-4xl font-headline tracking-tighter">Admin Settings</h1>
+        
         <Card>
             <CardHeader>
-            <CardTitle>General Settings</CardTitle>
-            <CardDescription>Manage application-wide settings.</CardDescription>
+                <CardTitle>Admin Profile</CardTitle>
+                <CardDescription>Update your personal administrator account details.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-                <Label htmlFor="maintenance-mode" className="pr-4">Maintenance Mode</Label>
-                <Switch 
-                    id="maintenance-mode" 
-                    checked={maintenanceMode}
-                    onCheckedChange={setMaintenanceMode}
-                />
-            </div>
-            <div className="flex items-center justify-between">
-                <Label htmlFor="new-user-registration" className="pr-4">Allow New User Registrations</Label>
-                <Switch 
-                    id="new-user-registration" 
-                    checked={allowRegistrations}
-                    onCheckedChange={setAllowRegistrations}
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="api-key">External API Key</Label>
-                <Input 
-                    id="api-key" 
-                    placeholder="Enter your API key" 
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                />
-            </div>
-            <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-            </Button>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onAdminProfileSubmit)} className="space-y-4 max-w-sm">
+                        <FormField control={form.control} name="name" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl><Input {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="email" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl><Input type="email" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="password" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>New Password</FormLabel>
+                                <FormControl><Input type="password" placeholder="Leave blank to keep current password" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <PasswordStrengthMeter password={passwordForStrengthMeter} />
+                        <Button type="submit" disabled={isUpdatingProfile}>
+                            {isUpdatingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Update Profile
+                        </Button>
+                    </form>
+                </Form>
             </CardContent>
         </Card>
-      </form>
+      
+        <form onSubmit={handleSaveChanges}>
+            <Card>
+                <CardHeader>
+                    <CardTitle>General Settings</CardTitle>
+                    <CardDescription>Manage application-wide settings.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {isFetchingSettings ? <Loader2 className="animate-spin" /> : (
+                        <>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="maintenance-mode" className="pr-4">Maintenance Mode</Label>
+                                <Switch id="maintenance-mode" checked={maintenanceMode} onCheckedChange={setMaintenanceMode} />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="new-user-registration" className="pr-4">Allow New User Registrations</Label>
+                                <Switch id="new-user-registration" checked={allowRegistrations} onCheckedChange={setAllowRegistrations} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="api-key">External API Key</Label>
+                                <Input id="api-key" placeholder="Enter your API key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+                            </div>
+                        </>
+                    )}
+                    <Button type="submit" disabled={isSavingSettings || isFetchingSettings}>
+                        {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
+                </CardContent>
+            </Card>
+        </form>
 
-      <Card className="border-destructive">
-          <CardHeader>
-              <CardTitle className="text-destructive">System Operations</CardTitle>
-              <CardDescription>Potentially dangerous actions.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-between items-center">
-              <div>
-                  <p className="font-semibold">Reset Application Data</p>
-                  <p className="text-sm text-muted-foreground">This will clear all non-admin user accounts and generated data.</p>
-              </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Reset Data</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This action cannot be undone and will permanently delete all user data and generated content. This is a simulation and will not actually delete data.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={handleResetData}
-                        disabled={isResetting}
-                    >
-                        {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Reset Data
-                    </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-          </CardContent>
-      </Card>
+        <Card className="border-destructive">
+            <CardHeader>
+                <CardTitle className="text-destructive">System Operations</CardTitle>
+                <CardDescription>Potentially dangerous actions. This cannot be undone.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-between items-center">
+                <div>
+                    <p className="font-semibold">Reset Application Data</p>
+                    <p className="text-sm text-muted-foreground">This will permanently clear all non-admin user accounts.</p>
+                </div>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild><Button variant="destructive">Reset Data</Button></AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>This action will permanently delete all user data and generated content. Admin accounts will not be affected.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleResetData} disabled={isResetting}>
+                                {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Reset Data
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardContent>
+        </Card>
     </div>
   );
 }

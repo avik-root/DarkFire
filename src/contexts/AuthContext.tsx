@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (data: PublicUser) => void;
   logout: () => void;
   signup: (data: PublicUser) => void;
+  updateUser: (data: PublicUser) => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
 }
@@ -62,11 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/playground');
   };
 
+  const updateUser = (userData: PublicUser) => {
+    Cookies.set(USER_COOKIE, JSON.stringify(userData), { expires: 7 });
+    setUser(userData);
+  };
+
   const value = { 
     user, 
     login, 
     logout, 
-    signup, 
+    signup,
+    updateUser, 
     isAuthenticated: !loading && !!user, 
     isAdmin: !loading && isAdmin 
   };
