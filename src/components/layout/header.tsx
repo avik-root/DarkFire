@@ -10,12 +10,17 @@ export default function Header() {
   const { isAuthenticated, logout, user, isAdmin } = useAuth();
 
   return (
-    <header className="py-4 px-8 border-b border-card">
+    <header className="sticky top-0 z-50 py-4 px-8 border-b border-card bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-2xl font-headline text-primary hover:text-primary/80 transition-colors">
           <ShieldAlert className="h-8 w-8" />
           <h1>DarkFire</h1>
         </Link>
+        <nav className="hidden md:flex gap-6 text-sm font-medium">
+            <Link href="/#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</Link>
+            <Link href="/#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
+            <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">About Us</Link>
+        </nav>
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <>

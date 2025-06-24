@@ -1,21 +1,18 @@
+
 "use client";
 
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
 
 export default function Footer() {
-  const { isAuthenticated } = useAuth();
-
   return (
     <footer className="py-6 px-8 mt-auto border-t border-card">
-      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
+      <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground gap-4">
         <p>&copy; {new Date().getFullYear()} DarkFire. All rights reserved.</p>
-        {!isAuthenticated && (
-          <div className="flex gap-4 mt-4 md:mt-0">
-            <Link href="/login" className="hover:text-primary transition-colors">Admin Login</Link>
-            <Link href="/signup" className="hover:text-primary transition-colors">Create Account</Link>
-          </div>
-        )}
+        <div className="flex gap-x-6">
+            <Link href="/#features" className="hover:text-primary transition-colors">Features</Link>
+            <Link href="/about" className="hover:text-primary transition-colors">About Us</Link>
+            <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>
+        </div>
       </div>
     </footer>
   );
