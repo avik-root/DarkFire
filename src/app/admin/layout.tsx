@@ -55,19 +55,19 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="#" tooltip="Analytics" disabled>
+              <SidebarMenuButton href="/admin/analytics" tooltip="Analytics" isActive={pathname === '/admin/analytics'}>
                 <BarChart3 />
                 Analytics
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="#" tooltip="User Management" disabled>
+              <SidebarMenuButton href="/admin/users" tooltip="User Management" isActive={pathname === '/admin/users'}>
                 <Users />
                 User Management
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href="#" tooltip="Settings" disabled>
+              <SidebarMenuButton href="/admin/settings" tooltip="Settings" isActive={pathname === '/admin/settings'}>
                 <Settings />
                 Settings
               </SidebarMenuButton>
