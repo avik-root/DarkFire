@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3 } from "lucide-react";
 
-export default function AnalyticsPage() {
+export default function AnalyticsPage({}: {}) {
   return (
     <div className="space-y-8 opacity-0 animate-fade-in-up">
       <h1 className="text-4xl font-headline tracking-tighter">Analytics</h1>

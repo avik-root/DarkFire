@@ -27,7 +27,7 @@ async function getTeamMembers(): Promise<TeamMember[]> {
 }
 
 
-export default async function AboutPage() {
+export default async function AboutPage({}: {}) {
   const teamMembers = await getTeamMembers();
 
   return (

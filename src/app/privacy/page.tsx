@@ -1,4 +1,4 @@
-export default function PrivacyPage() {
+export default function PrivacyPage({}: {}) {
   return (
     <div className="space-y-8 opacity-0 animate-fade-in-up">
       <h1 className="text-4xl md:text-5xl font-headline tracking-tighter">Privacy <span className="text-primary">Policy</span></h1>
