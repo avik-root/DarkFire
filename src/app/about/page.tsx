@@ -17,12 +17,6 @@ const teamMembers = [
     avatar: "https://i.pravatar.cc/150?u=jasmine",
     bio: "Jasmine ensures our generated payloads are effective and relevant. A world-renowned ethical hacker, she leads our threat intelligence team.",
   },
-  {
-    name: "Samuel 'Kernel' Jones",
-    role: "Platform Engineer",
-    avatar: "https://i.pravatar.cc/150?u=samuel",
-    bio: "Samuel built the robust infrastructure that powers DarkFire. His expertise in cloud computing and DevOps keeps our platform fast and reliable.",
-  },
 ];
 
 export default function AboutPage() {
@@ -90,7 +84,7 @@ export default function AboutPage() {
             The architects behind the fire.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-stretch lg:max-w-4xl mx-auto">
           {teamMembers.map((member) => (
              <Card key={member.name} className="bg-card/50 text-center flex flex-col">
               <CardHeader className="items-center pt-6">
