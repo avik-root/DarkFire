@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ShieldAlert, LogOut, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, LogOut, ShieldCheck, HardHat } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -19,12 +19,19 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <>
-              <span className="text-sm text-muted-foreground">Welcome, {user?.email}</span>
-               {isAdmin && (
-                <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
+              <span className="text-sm text-muted-foreground hidden md:inline">Welcome, {user?.email}</span>
+               {isAdmin ? (
+                <Button asChild variant="ghost" size="sm">
                   <Link href="/admin/dashboard">
                     <ShieldCheck className="mr-2 h-4 w-4" />
                     Admin Panel
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/playground">
+                    <HardHat className="mr-2 h-4 w-4" />
+                    Playground
                   </Link>
                 </Button>
               )}

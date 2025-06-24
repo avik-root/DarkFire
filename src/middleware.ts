@@ -8,11 +8,15 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const loginUrl = new URL('/login', request.url);
-  const homeUrl = new URL('/', request.url);
   const adminUrl = new URL('/admin', request.url);
+  const playgroundUrl = new URL('/playground', request.url);
+
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup');
+  const isAdminPage = pathname.startsWith('/admin');
+  const isPlaygroundPage = pathname.startsWith('/playground');
 
   // If trying to access protected admin routes
-  if (pathname.startsWith('/admin')) {
+  if (isAdminPage) {
     if (!userCookie) {
       return NextResponse.redirect(loginUrl);
     }
@@ -20,8 +24,28 @@ export function middleware(request: NextRequest) {
     try {
       const user = JSON.parse(userCookie.value);
       if (user.email !== ADMIN_EMAIL) {
-        // Logged in, but not an admin. Redirect to home page.
-        return NextResponse.redirect(homeUrl);
+        // Logged in, but not an admin. Redirect to playground.
+        return NextResponse.redirect(playgroundUrl);
+      }
+    } catch (error) {
+      // Invalid cookie, clear it and redirect to login
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete(USER_COOKIE);
+      return response;
+    }
+  }
+  
+  // If trying to access protected playground route
+  if (isPlaygroundPage) {
+     if (!userCookie) {
+      return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+      const user = JSON.parse(userCookie.value);
+      if (user.email === ADMIN_EMAIL) {
+        // Admin shouldn't be on the playground page, redirect to their dashboard
+        return NextResponse.redirect(adminUrl);
       }
     } catch (error) {
       // Invalid cookie, clear it and redirect to login
@@ -32,13 +56,13 @@ export function middleware(request: NextRequest) {
   }
 
   // If logged in, redirect away from login/signup pages
-  if (userCookie && (pathname.startsWith('/login') || pathname.startsWith('/signup'))) {
+  if (userCookie && isAuthPage) {
     try {
         const user = JSON.parse(userCookie.value);
         if (user.email === ADMIN_EMAIL) {
           return NextResponse.redirect(adminUrl);
         }
-        return NextResponse.redirect(homeUrl);
+        return NextResponse.redirect(playgroundUrl);
     } catch (error) {
         // Invalid cookie, let them proceed to login to fix it, but clear the bad cookie
         const response = NextResponse.next();
@@ -51,5 +75,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/login', '/signup'],
+  matcher: ['/admin/:path*', '/login', '/signup', '/playground'],
 };

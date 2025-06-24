@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.email === ADMIN_EMAIL) {
         router.push('/admin/dashboard');
     } else {
-        router.push('/');
+        router.push('/playground');
     }
   };
 
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     addUserToRegistry(newUser);
     Cookies.set(USER_COOKIE, JSON.stringify(newUser), { expires: 7 });
     setUser(newUser);
-    router.push('/');
+    router.push('/playground');
   };
 
   const value = { 

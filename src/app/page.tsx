@@ -1,6 +1,6 @@
+
 "use client";
 
-import PayloadGenerator from "@/components/payload-generator";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -58,25 +58,6 @@ const howItWorksSteps = [
   },
 ];
 
-const LoginPrompt = () => (
-  <div className="text-center p-10 border-2 border-dashed border-card rounded-lg bg-card/20 opacity-0 animate-fade-in-up [animation-delay:600ms]">
-    <Lock className="mx-auto h-12 w-12 text-muted-foreground" />
-    <h2 className="mt-6 text-3xl font-headline tracking-tighter">The Forge Awaits</h2>
-    <p className="mt-2 text-muted-foreground">
-      Please log in or create an account to access the Payload Forge.
-    </p>
-    <div className="mt-6 flex justify-center gap-4">
-      <Button asChild>
-        <Link href="/login">Login <ArrowRight className="ml-2 h-4 w-4" /></Link>
-      </Button>
-      <Button asChild variant="secondary">
-        <Link href="/signup">Sign Up</Link>
-      </Button>
-    </div>
-  </div>
-);
-
-
 export default function Home() {
   const { isAuthenticated } = useAuth();
 
@@ -94,15 +75,15 @@ export default function Home() {
           <p className="mt-4 max-w-2xl mx-auto text-lg text-foreground/80">
             Your AI-powered assistant for generating custom security scripts and payloads.
             {isAuthenticated
-              ? " You're logged in and ready to forge."
+              ? " Head to the playground to start forging."
               : " Log in to create tailored code for your security assessments."}
           </p>
            <div className="mt-8">
             <Button size="lg" asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <a href="#forge">
-                {isAuthenticated ? 'Go to the Forge' : 'Get Started'}
+              <Link href={isAuthenticated ? "/playground" : "/login"}>
+                {isAuthenticated ? 'Go to the Playground' : 'Get Started'}
                 <ArrowRight className="ml-2 h-5 w-5"/>
-              </a>
+              </Link>
             </Button>
           </div>
         </div>
@@ -157,16 +138,6 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
-
-      <section id="forge" className="scroll-m-16">
-        {isAuthenticated ? (
-          <div className="opacity-0 animate-fade-in-up [animation-delay:600ms]">
-            <PayloadGenerator />
-          </div>
-        ) : (
-          <LoginPrompt />
-        )}
       </section>
     </div>
   );
