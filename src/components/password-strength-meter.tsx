@@ -10,11 +10,11 @@ interface PasswordStrengthMeterProps {
 }
 
 const STRENGTH_LEVELS = [
-  { label: "Very Weak", color: "bg-red-500", width: "w-1/5" },
-  { label: "Weak", color: "bg-orange-500", width: "w-2/5" },
-  { label: "Fair", color: "bg-yellow-500", width: "w-3/5" },
-  { label: "Good", color: "bg-blue-500", width: "w-4/5" },
-  { label: "Strong", color: "bg-green-500", width: "w-full" },
+  { label: "Very Weak", color: "bg-[hsl(var(--strength-very-weak))]" },
+  { label: "Weak", color: "bg-[hsl(var(--strength-weak))]" },
+  { label: "Fair", color: "bg-[hsl(var(--strength-fair))]" },
+  { label: "Good", color: "bg-[hsl(var(--strength-good))]" },
+  { label: "Strong", color: "bg-[hsl(var(--strength-strong))]" },
 ];
 
 export default function PasswordStrengthMeter({ password = "" }: PasswordStrengthMeterProps) {
