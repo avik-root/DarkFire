@@ -17,7 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { loginAction } from "./actions";
+import { loginAction } from "../actions";
 
 export default function LoginPage() {
   const { login } = useAuth();
