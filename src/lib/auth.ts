@@ -6,12 +6,15 @@ import path from 'path';
 import bcrypt from 'bcryptjs';
 import type { User, CreateUserInput, PublicUser } from './auth-shared';
 
-const usersFilePath = path.join(process.cwd(), 'src', 'data', 'users.json');
+const dataDir = path.join(process.cwd(), 'src', 'data');
+const regularUsersFilePath = path.join(dataDir, 'users.json');
+const adminUsersFilePath = path.join(dataDir, 'admin.json');
+
 
 // --- Helper Functions ---
-async function readUsers(): Promise<User[]> {
+async function readUserFile(filePath: string): Promise<User[]> {
   try {
-    const data = await fs.readFile(usersFilePath, 'utf-8');
+    const data = await fs.readFile(filePath, 'utf-8');
     if (!data) return [];
     return JSON.parse(data);
   } catch (error: any) {
@@ -19,36 +22,42 @@ async function readUsers(): Promise<User[]> {
       // File doesn't exist, so we start with an empty array
       return [];
     }
-    console.error('Error reading users file:', error);
+    console.error(`Error reading users file at ${filePath}:`, error);
     throw new Error('Could not read user data.');
   }
 }
 
-async function writeUsers(users: User[]): Promise<void> {
+async function writeUserFile(filePath: string, users: User[]): Promise<void> {
   try {
-    await fs.writeFile(usersFilePath, JSON.stringify(users, null, 2), 'utf-8');
+    await fs.writeFile(filePath, JSON.stringify(users, null, 2), 'utf-8');
   } catch (error) {
-    console.error('Error writing users file:', error);
+    console.error(`Error writing users file to ${filePath}:`, error);
     throw new Error('Could not save user data.');
   }
 }
 
 // --- Public API ---
 export async function getUsers(): Promise<PublicUser[]> {
-  const users = await readUsers();
-  return users.map(({ password, ...user }) => user);
+  const regularUsers = await readUserFile(regularUsersFilePath);
+  const adminUsers = await readUserFile(adminUsersFilePath);
+  const allUsers = [...adminUsers, ...regularUsers];
+  return allUsers.map(({ password, ...user }) => user);
 }
 
 export async function addUser(data: CreateUserInput): Promise<PublicUser> {
-  const users = await readUsers();
+  const regularUsers = await readUserFile(regularUsersFilePath);
+  const adminUsers = await readUserFile(adminUsersFilePath);
+  const allUsers = [...adminUsers, ...regularUsers];
 
-  const userExists = users.some(user => user.email === data.email);
+  const userExists = allUsers.some(user => user.email === data.email);
   if (userExists) {
     throw new Error('An account with this email already exists.');
   }
 
   const hashedPassword = await bcrypt.hash(data.password, 10);
-  const role = users.length === 0 ? 'admin' : 'user';
+  
+  const isFirstUser = allUsers.length === 0;
+  const role = isFirstUser ? 'admin' : 'user';
 
   const newUser: User = {
     id: new Date().toISOString() + Math.random(),
@@ -57,16 +66,23 @@ export async function addUser(data: CreateUserInput): Promise<PublicUser> {
     password: hashedPassword,
     role,
   };
-
-  await writeUsers([...users, newUser]);
+  
+  if (isFirstUser) {
+    await writeUserFile(adminUsersFilePath, [...adminUsers, newUser]);
+  } else {
+    await writeUserFile(regularUsersFilePath, [...regularUsers, newUser]);
+  }
 
   const { password, ...publicUser } = newUser;
   return publicUser;
 }
 
 export async function verifyUser(email: string, pass: string): Promise<PublicUser | null> {
-    const users = await readUsers();
-    const user = users.find(u => u.email === email);
+    const regularUsers = await readUserFile(regularUsersFilePath);
+    const adminUsers = await readUserFile(adminUsersFilePath);
+    
+    // Check admins first, then regular users
+    const user = adminUsers.find(u => u.email === email) || regularUsers.find(u => u.email === email);
 
     if (!user) {
         return null;
@@ -83,15 +99,16 @@ export async function verifyUser(email: string, pass: string): Promise<PublicUse
 
 
 export async function deleteUserByEmail(email: string): Promise<void> {
-  let users = await readUsers();
+  // From the admin dashboard, only regular users can be deleted.
+  let users = await readUserFile(regularUsersFilePath);
   const initialCount = users.length;
   users = users.filter(user => user.email !== email);
 
   if (users.length === initialCount) {
-    // Optional: throw an error if the user wasn't found
-    // throw new Error('User not found.');
-    return; // Or just return silently
+    // User was not found in the regular users file.
+    // We don't check the admin file because the UI prevents this action.
+    return;
   }
 
-  await writeUsers(users);
+  await writeUserFile(regularUsersFilePath, users);
 }
