@@ -49,27 +49,35 @@ export default function AdminLayout({
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/dashboard" tooltip="Dashboard" isActive={pathname === '/admin/dashboard'}>
-                <LayoutDashboard />
-                Dashboard
+              <SidebarMenuButton asChild tooltip="Dashboard" isActive={pathname === '/admin/dashboard'}>
+                <Link href="/admin/dashboard">
+                  <LayoutDashboard />
+                  Dashboard
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/analytics" tooltip="Analytics" isActive={pathname === '/admin/analytics'}>
-                <BarChart3 />
-                Analytics
+              <SidebarMenuButton asChild tooltip="Analytics" isActive={pathname === '/admin/analytics'}>
+                <Link href="/admin/analytics">
+                  <BarChart3 />
+                  Analytics
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/users" tooltip="User Management" isActive={pathname === '/admin/users'}>
-                <Users />
-                User Management
+              <SidebarMenuButton asChild tooltip="User Management" isActive={pathname === '/admin/users'}>
+                <Link href="/admin/users">
+                  <Users />
+                  User Management
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href="/admin/settings" tooltip="Settings" isActive={pathname === '/admin/settings'}>
-                <Settings />
-                Settings
+              <SidebarMenuButton asChild tooltip="Settings" isActive={pathname === '/admin/settings'}>
+                <Link href="/admin/settings">
+                  <Settings />
+                  Settings
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
