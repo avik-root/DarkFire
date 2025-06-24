@@ -3,8 +3,9 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { addUser as addUserToRegistry } from '@/services/userService';
 
-interface User {
+export interface User {
   email: string;
 }
 
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const signup = (data: { email: string }) => {
     const newUser = { email: data.email };
+    addUserToRegistry(newUser);
     localStorage.setItem('user', JSON.stringify(newUser));
     setUser(newUser);
     router.push('/');
