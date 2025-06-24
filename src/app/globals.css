@@ -74,3 +74,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .home-background {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    padding: 2.5rem;
+    isolation: isolate;
+  }
+
+  .home-background::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+    filter: blur(2px) brightness(0.7);
+  }
+
+  .home-background::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: hsl(var(--background));
+    opacity: 0.6;
+    z-index: -1;
+  }
+}
