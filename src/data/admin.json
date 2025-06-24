@@ -1,2 +1,9 @@
-
-[]
+[
+  {
+    "id": "2025-06-24T20:39:11.108Z0.9877592481323576",
+    "name": "Admin",
+    "email": "admin@gmail.com",
+    "password": "$2a$10$9Xf/d9LZY7bJaTs3a6DlUumNrcJku7E40UVjC3OfsHIpOjm9tDnHa",
+    "role": "admin"
+  }
+]

@@ -38,10 +38,9 @@ async function writeUserFile(filePath: string, users: User[]): Promise<void> {
 
 // --- Public API ---
 export async function getUsers(): Promise<PublicUser[]> {
+  // Only return regular users for management purposes in the dashboard.
   const regularUsers = await readUserFile(regularUsersFilePath);
-  const adminUsers = await readUserFile(adminUsersFilePath);
-  const allUsers = [...adminUsers, ...regularUsers];
-  return allUsers.map(({ password, ...user }) => user);
+  return regularUsers.map(({ password, ...user }) => user);
 }
 
 export async function addUser(data: CreateUserInput): Promise<PublicUser> {
