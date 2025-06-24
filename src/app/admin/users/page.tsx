@@ -70,7 +70,7 @@ export default function UserManagementPage() {
   useEffect(() => {
     fetchUsers();
     fetchTeam();
-  }, []);
+  }, [toast]);
 
   const handleDeleteUser = async (email: string) => {
     const result = await deleteUserAction(email);
@@ -226,7 +226,8 @@ export default function UserManagementPage() {
                               <TableCell className="text-right"><Skeleton className="h-8 w-16 rounded-md ml-auto" /></TableCell>
                             </TableRow>
                           ))
-                      ) : teamMembers.map((member) => (
+                      ) : teamMembers.length > 0 ? (
+                        teamMembers.map((member) => (
                         <TableRow key={member.handle}>
                             <TableCell>
                                 <Avatar>
@@ -275,7 +276,13 @@ export default function UserManagementPage() {
                               </AlertDialog>
                             </TableCell>
                         </TableRow>
-                      ))}
+                      ))) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                            No team members found.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                 </Table>
             </CardContent>
