@@ -6,7 +6,7 @@ import path from 'path';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { getUsers as getUsersFromFile, deleteUserByEmail } from "@/lib/auth";
-import type { PublicUser, UpdateAdminSchema } from "@/lib/auth-shared";
+import type { UpdateAdminSchema } from "@/lib/auth-shared";
 import type { User } from '@/lib/auth-shared';
 
 const dataDir = path.join(process.cwd(), 'src', 'data');
@@ -172,7 +172,15 @@ export async function updateAdminProfileAction(userId: string, data: z.infer<typ
         adminToUpdate.email = data.email;
 
         // Update password if a new one is provided
-        if (data.password && data.password.length > 0) {
+        if (data.password) {
+            // Zod schema ensures currentPassword is provided if new password is set.
+            // We just need to verify it's correct.
+            const isPasswordValid = await bcrypt.compare(data.currentPassword!, adminToUpdate.password);
+            if (!isPasswordValid) {
+                return { success: false, error: "The current password you entered is incorrect." };
+            }
+            
+            // Zod schema ensures passwords match. Hash the new password.
             adminToUpdate.password = await bcrypt.hash(data.password, 10);
         }
 

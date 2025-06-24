@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSettingsAction, saveSettingsAction, resetApplicationDataAction, updateAdminProfileAction } from "@/app/admin/actions";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { UpdateAdminSchema } from "@/lib/auth-shared";
 import {
@@ -41,6 +41,11 @@ export default function AdminSettingsPage() {
     const [isResetting, setIsResetting] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
+    // Password visibility states
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     // General Settings state
     const [maintenanceMode, setMaintenanceMode] = useState(false);
     const [allowRegistrations, setAllowRegistrations] = useState(true);
@@ -48,7 +53,7 @@ export default function AdminSettingsPage() {
 
     const form = useForm<AdminProfileFormValues>({
         resolver: zodResolver(UpdateAdminSchema),
-        defaultValues: { name: "", email: "", password: "" },
+        defaultValues: { name: "", email: "", currentPassword: "", password: "", confirmPassword: "" },
     });
     
     const passwordForStrengthMeter = form.watch("password");
@@ -75,7 +80,9 @@ export default function AdminSettingsPage() {
             form.reset({
                 name: user.name,
                 email: user.email,
+                currentPassword: "",
                 password: "",
+                confirmPassword: "",
             });
         }
 
@@ -90,7 +97,7 @@ export default function AdminSettingsPage() {
         if (result.success && result.user) {
             toast({ title: "Success", description: result.message });
             updateUser(result.user); // Update user in auth context
-            form.reset({ ...data, password: "" }); // Reset form, clear password field
+            form.reset({ ...data, currentPassword: "", password: "", confirmPassword: "" });
         } else {
             toast({ variant: "destructive", title: "Error", description: result.error });
         }
@@ -148,16 +155,51 @@ export default function AdminSettingsPage() {
                                 <FormMessage />
                             </FormItem>
                         )} />
+                        <FormField control={form.control} name="currentPassword" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Current Password</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Input type={showCurrentPassword ? "text" : "password"} placeholder="Enter current password to change it" {...field} value={field.value ?? ""} />
+                                        <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground" aria-label={showCurrentPassword ? "Hide password" : "Show password"}>
+                                            {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
                         <FormField control={form.control} name="password" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>New Password</FormLabel>
-                                <FormControl><Input type="password" placeholder="Leave blank to keep current password" {...field} /></FormControl>
+                                <FormControl>
+                                     <div className="relative">
+                                        <Input type={showNewPassword ? "text" : "password"} placeholder="Leave blank to keep current" {...field} value={field.value ?? ""} />
+                                        <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground" aria-label={showNewPassword ? "Hide password" : "Show password"}>
+                                            {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                         <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Confirm New Password</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your new password" {...field} value={field.value ?? ""} />
+                                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground" aria-label={showConfirmPassword ? "Hide password" : "Show password"}>
+                                            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
                         <PasswordStrengthMeter password={passwordForStrengthMeter} />
-                        <Button type="submit" disabled={isUpdatingProfile}>
-                            {isUpdatingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={isUpdatingProfile || form.formState.isSubmitting}>
+                            {(isUpdatingProfile || form.formState.isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Update Profile
                         </Button>
                     </form>

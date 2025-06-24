@@ -27,14 +27,56 @@ export const CreateUserSchema = z.object({
 export const UpdateAdminSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  password: z.string()
-    .transform(val => val === '' ? undefined : val) // Treat empty string as undefined
-    .refine(val => val === undefined || val.length >= 8, 'New password must be at least 8 characters')
-    .refine(val => val === undefined || /[a-z]/.test(val), { message: 'New password must contain a lowercase letter' })
-    .refine(val => val === undefined || /[A-Z]/.test(val), { message: 'New password must contain an uppercase letter' })
-    .refine(val => val === undefined || /\d/.test(val), { message: 'New password must contain a number' })
-    .refine(val => val === undefined || /[\W_]/.test(val), { message: 'New password must contain a special character' })
-    .optional(),
+  currentPassword: z.string().optional(),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // If user is trying to set a new password (by typing in new password or confirm password fields)
+  if (data.password || data.confirmPassword) {
+    
+    // Require current password
+    if (!data.currentPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['currentPassword'],
+        message: 'Current password is required to set a new one.',
+      });
+    }
+
+    // Require new password and validate its strength
+    if (!data.password) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['password'],
+            message: 'Please enter a new password.',
+        });
+    } else {
+        if (data.password.length < 8) {
+            ctx.addIssue({ code: 'custom', path: ['password'], message: 'New password must be at least 8 characters.' });
+        }
+        if (!/[a-z]/.test(data.password)) {
+            ctx.addIssue({ code: 'custom', path: ['password'], message: 'Password must contain a lowercase letter.' });
+        }
+        if (!/[A-Z]/.test(data.password)) {
+            ctx.addIssue({ code: 'custom', path: ['password'], message: 'Password must contain an uppercase letter.' });
+        }
+        if (!/\d/.test(data.password)) {
+            ctx.addIssue({ code: 'custom', path: ['password'], message: 'Password must contain a number.' });
+        }
+        if (!/[\W_]/.test(data.password)) {
+            ctx.addIssue({ code: 'custom', path: ['password'], message: 'Password must contain a special character.' });
+        }
+    }
+    
+    // Require passwords to match
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['confirmPassword'],
+        message: 'The new passwords do not match.',
+      });
+    }
+  }
 });
 
 
