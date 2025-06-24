@@ -4,6 +4,7 @@
 import { getUsers as getUsersFromFile, deleteUserByEmail } from "@/lib/auth";
 import fs from 'fs/promises';
 import path from 'path';
+import { z } from 'zod';
 
 // User Management Actions
 export async function getUsersAction() {
@@ -81,4 +82,25 @@ export async function updateTeamMemberAction(handle: string, avatarDataUrl: stri
     } catch (error: any) {
         return { success: false, error: `Failed to update avatar: ${error.message}` };
     }
+}
+
+// Settings Actions
+const SettingsSchema = z.object({
+    maintenanceMode: z.boolean(),
+    allowRegistrations: z.boolean(),
+    apiKey: z.string().optional(),
+});
+
+export async function saveSettingsAction(data: unknown) {
+    const result = SettingsSchema.safeParse(data);
+    if (!result.success) {
+        return { success: false, error: "Invalid data provided." };
+    }
+
+    // In a real application, you would save these settings to a database
+    // or a secure configuration store. For this prototype, we'll just
+    // simulate success without persisting the data.
+    console.log("Simulating saving settings:", result.data);
+
+    return { success: true, message: "Settings saved successfully!" };
 }
