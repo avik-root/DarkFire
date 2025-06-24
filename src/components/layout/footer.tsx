@@ -12,6 +12,7 @@ export default function Footer() {
             <Link href="/#features" className="hover:text-primary transition-colors">Features</Link>
             <Link href="/about" className="hover:text-primary transition-colors">About Us</Link>
             <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link href="/login" className="hover:text-primary transition-colors">Admin Login</Link>
         </div>
       </div>
     </footer>
