@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { Users, Bot, TrendingUp, ShieldAlert, Loader2 } from "lucide-react";
+import { Users, Bot, TrendingUp, ShieldX, Loader2 } from "lucide-react";
 import { getUsersAction, getAnalyticsDataAction } from "@/app/admin/actions";
 import type { PublicUser } from "@/lib/auth-shared";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type AnalyticsData = {
     payloadsGenerated: number;
+    successfulGenerations: number;
+    failedGenerations: number;
     generationHistory: { month: string; generated: number }[];
 };
 
@@ -50,6 +52,8 @@ export default function AdminDashboard() {
         // Set default analytics data on failure
         setAnalytics({
           payloadsGenerated: 0,
+          successfulGenerations: 0,
+          failedGenerations: 0,
           generationHistory: [],
         });
       }
@@ -59,12 +63,14 @@ export default function AdminDashboard() {
     fetchData();
   }, [toast]);
   
-  // Keep mock values for stats that are not tracked yet.
+  const totalAttempts = analytics ? analytics.successfulGenerations + analytics.failedGenerations : 0;
+  const successRate = totalAttempts > 0 ? (analytics.successfulGenerations / totalAttempts) * 100 : 0;
+
   const stats = [
-    { title: "Total Users", value: loading ? <Skeleton className="h-6 w-1/4" /> : users.length, icon: <Users className="h-6 w-6 text-muted-foreground" />, change: "" },
-    { title: "Payloads Generated", value: loading || !analytics ? <Skeleton className="h-6 w-1/4" /> : analytics.payloadsGenerated.toLocaleString(), icon: <Bot className="h-6 w-6 text-muted-foreground" />, change: "" },
-    { title: "Success Rate", value: "97.3%", icon: <TrendingUp className="h-6 w-6 text-muted-foreground" />, change: "+1.2%" },
-    { title: "Threats Neutralized", value: "42", icon: <ShieldAlert className="h-6 w-6 text-muted-foreground" />, change: "-5%" },
+    { title: "Total Users", value: loading ? <Skeleton className="h-6 w-1/4" /> : users.length, icon: <Users className="h-6 w-6 text-muted-foreground" /> },
+    { title: "Payloads Generated", value: loading || !analytics ? <Skeleton className="h-6 w-1/4" /> : analytics.payloadsGenerated.toLocaleString(), icon: <Bot className="h-6 w-6 text-muted-foreground" /> },
+    { title: "Success Rate", value: loading || !analytics ? <Skeleton className="h-6 w-1/4" /> : `${successRate.toFixed(1)}%`, icon: <TrendingUp className="h-6 w-6 text-muted-foreground" /> },
+    { title: "Generation Failures", value: loading || !analytics ? <Skeleton className="h-6 w-1/4" /> : analytics.failedGenerations.toLocaleString(), icon: <ShieldX className="h-6 w-6 text-muted-foreground" /> },
   ];
 
   return (
@@ -80,8 +86,8 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-               <p className={`text-xs ${stat.change.startsWith('+') ? 'text-emerald-500' : stat.change.startsWith('-') ? 'text-red-500' : 'text-muted-foreground'}`}>
-                {stat.change ? `${stat.change} vs last month` : <>&nbsp;</>}
+               <p className="text-xs text-muted-foreground">
+                <>&nbsp;</>
               </p>
             </CardContent>
           </Card>

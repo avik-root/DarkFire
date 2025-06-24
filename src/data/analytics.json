@@ -1,5 +1,8 @@
+
 {
   "payloadsGenerated": 0,
+  "successfulGenerations": 0,
+  "failedGenerations": 0,
   "generationHistory": [
     {
       "month": "Jan",

@@ -201,12 +201,16 @@ const analyticsFilePath = path.join(dataDir, 'analytics.json');
 
 type AnalyticsData = {
     payloadsGenerated: number;
+    successfulGenerations: number;
+    failedGenerations: number;
     generationHistory: { month: string; generated: number }[];
 };
 
 async function readAnalyticsData(): Promise<AnalyticsData> {
     const defaultData: AnalyticsData = {
         payloadsGenerated: 0,
+        successfulGenerations: 0,
+        failedGenerations: 0,
         generationHistory: [
             { "month": "Jan", "generated": 0 }, { "month": "Feb", "generated": 0 },
             { "month": "Mar", "generated": 0 }, { "month": "Apr", "generated": 0 },
@@ -218,7 +222,8 @@ async function readAnalyticsData(): Promise<AnalyticsData> {
     };
     try {
         const data = await fs.readFile(analyticsFilePath, 'utf-8');
-        return JSON.parse(data);
+        // Merge with defaults to ensure all keys are present
+        return { ...defaultData, ...JSON.parse(data) };
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
             await fs.writeFile(analyticsFilePath, JSON.stringify(defaultData, null, 2), 'utf-8');
