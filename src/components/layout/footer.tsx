@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
-export default function Footer() {
+interface FooterProps {
+  adminLoginUrl: string;
+}
+
+export default function Footer({ adminLoginUrl }: FooterProps) {
   const [year, setYear] = useState<number | null>(null);
 
   useEffect(() => {
@@ -11,6 +15,8 @@ export default function Footer() {
     // which prevents a hydration mismatch.
     setYear(new Date().getFullYear());
   }, []);
+
+  const adminLinkText = adminLoginUrl === '/signup' ? 'Create Admin Account' : 'Admin Login';
 
   return (
     <footer className="py-6 px-8 mt-auto border-t border-card">
@@ -21,7 +27,7 @@ export default function Footer() {
             <Link href="/#features" className="hover:text-primary transition-colors">Features</Link>
             <Link href="/about" className="hover:text-primary transition-colors">About Us</Link>
             <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link href="/login" className="hover:text-primary transition-colors">Admin Login</Link>
+            <Link href={adminLoginUrl} className="hover:text-primary transition-colors">{adminLinkText}</Link>
         </div>
       </div>
     </footer>

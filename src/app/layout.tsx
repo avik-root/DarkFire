@@ -4,17 +4,32 @@ import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { AuthProvider } from "@/contexts/AuthContext";
+import fs from 'fs/promises';
+import path from 'path';
 
 export const metadata: Metadata = {
   title: "DarkFire",
   description: "AI-powered custom malware generation tool.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const adminFilePath = path.join(process.cwd(), 'src', 'data', 'admin.json');
+  let adminLoginUrl = '/signup'; // Default to signup
+
+  try {
+    const adminData = await fs.readFile(adminFilePath, 'utf-8');
+    const admins: unknown[] = JSON.parse(adminData);
+    if (admins && admins.length > 0) {
+      adminLoginUrl = '/login';
+    }
+  } catch (error) {
+    // If file doesn't exist, is empty, or has invalid JSON, default to signup.
+  }
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -28,7 +43,7 @@ export default function RootLayout({
           <main className="flex-grow container mx-auto px-4 py-8">
             {children}
           </main>
-          <Footer />
+          <Footer adminLoginUrl={adminLoginUrl} />
           <Toaster />
         </AuthProvider>
       </body>
