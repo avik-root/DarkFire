@@ -71,52 +71,60 @@ export default async function AboutPage({}: {}) {
         </Card>
       </section>
 
-      <section className="grid md:grid-cols-2 gap-12 items-center">
-        <div className="space-y-4">
+      <section className="text-center max-w-4xl mx-auto">
           <h2 className="text-4xl font-headline tracking-tighter">Our <span className="text-primary">Mission</span></h2>
-          <p className="text-foreground/70">
+          <p className="mt-4 text-lg text-foreground/70">
             Our mission is to empower security teams with cutting-edge, AI-driven tools that are both powerful and ethical. We believe that by automating the creation of custom security scripts, we can free up valuable time for professionals to focus on higher-level strategy, threat analysis, and defense.
           </p>
-          <div className="flex flex-col space-y-4 pt-4">
+          <div className="grid md:grid-cols-3 gap-8 mt-12 text-left">
             <div className="flex items-start gap-4">
-              <div className="p-2 bg-primary/10 rounded-full">
+              <div className="p-3 bg-primary/10 rounded-full mt-1">
                 <Target className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold">Innovation</h3>
+                <h3 className="font-semibold text-xl">Innovation</h3>
                 <p className="text-sm text-muted-foreground">Continuously advancing the state of AI in cybersecurity.</p>
               </div>
             </div>
              <div className="flex items-start gap-4">
-              <div className="p-2 bg-primary/10 rounded-full">
+              <div className="p-3 bg-primary/10 rounded-full mt-1">
                 <ShieldAlert className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold">Responsibility</h3>
+                <h3 className="font-semibold text-xl">Responsibility</h3>
                 <p className="text-sm text-muted-foreground">Promoting ethical use and providing tools for defense.</p>
               </div>
             </div>
              <div className="flex items-start gap-4">
-              <div className="p-2 bg-primary/10 rounded-full">
+              <div className="p-3 bg-primary/10 rounded-full mt-1">
                 <Users className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold">Empowerment</h3>
+                <h3 className="font-semibold text-xl">Empowerment</h3>
                 <p className="text-sm text-muted-foreground">Giving security professionals the tools they need to succeed.</p>
               </div>
             </div>
           </div>
-        </div>
-        <div>
-           <Image
-            src="https://placehold.co/600x400.png"
-            alt="Team working on code"
-            className="rounded-lg shadow-lg"
-            width={600}
-            height={400}
-            data-ai-hint="team collaboration"
-          />
-        </div>
+      </section>
+
+      <section className="max-w-4xl mx-auto">
+        <Card className="bg-destructive/10 border-destructive/30">
+          <CardHeader className="text-center items-center">
+            <ShieldAlert className="w-10 h-10 text-destructive mb-3"/>
+            <CardTitle className="text-3xl font-headline tracking-tighter text-destructive">Ethical Use & Disclaimer</CardTitle>
+          </CardHeader>
+          <CardContent className="text-destructive-foreground/80 space-y-4 text-center">
+            <p>
+              DarkFire is designed exclusively for authorized security professionals, penetration testers, and educational purposes. Its function is to generate custom security scripts for controlled environments to identify vulnerabilities and improve defenses.
+            </p>
+            <p className="font-semibold">
+              Misuse of this tool for malicious activities or on systems for which you do not have explicit, written consent is strictly prohibited and illegal.
+            </p>
+            <p>
+              The creators of DarkFire and MintFire are not responsible for any misuse of the generated code. Users are solely responsible for their actions and must comply with all applicable laws.
+            </p>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="space-y-12">
