@@ -67,6 +67,8 @@ export async function addUser(data: CreateUserInput): Promise<PublicUser> {
     codeGenerationEnabled: role === 'admin',
     formSubmitted: role === 'admin',
     credits: role === 'admin' ? 9999 : 2,
+    activationKey: null,
+    activationCredits: 0,
   };
   
   if (isFirstUser) {
@@ -149,16 +151,39 @@ export async function updateUserCodeGenerationByEmail(email: string, enabled: bo
   }
 }
 
-export async function updateUserCreditsByEmail(email: string, credits: number): Promise<void> {
+export async function setActivationKeyByEmail(email: string, key: string, credits: number): Promise<void> {
     const users = await readUserFile(regularUsersFilePath);
     const userIndex = users.findIndex(u => u.email === email);
     if (userIndex > -1) {
-        users[userIndex].credits = credits;
+        users[userIndex].activationKey = key;
+        users[userIndex].activationCredits = credits;
         await writeUserFile(regularUsersFilePath, users);
     } else {
         throw new Error('User not found.');
     }
 }
+
+export async function redeemActivationKeyByEmail(email: string, key: string): Promise<User> {
+    const users = await readUserFile(regularUsersFilePath);
+    const userIndex = users.findIndex(u => u.email === email);
+    if (userIndex === -1) {
+        throw new Error('User not found');
+    }
+    
+    const user = users[userIndex];
+    if (!user.activationKey || user.activationKey !== key) {
+        throw new Error('Invalid or expired activation key.');
+    }
+
+    user.credits = (user.credits || 0) + (user.activationCredits || 0);
+    user.activationKey = null;
+    user.activationCredits = 0;
+
+    users[userIndex] = user;
+    await writeUserFile(regularUsersFilePath, users);
+    return user;
+}
+
 
 export async function decrementUserCredit(email: string): Promise<User | null> {
     // Only applies to regular users

@@ -5,7 +5,7 @@ import { generatePayload, GeneratePayloadInput } from "@/ai/flows/generate-paylo
 import fs from 'fs/promises';
 import path from 'path';
 import { z } from "zod";
-import { decrementUserCredit } from "@/lib/auth";
+import { decrementUserCredit, redeemActivationKeyByEmail } from "@/lib/auth";
 import type { User, PublicUser } from "@/lib/auth-shared";
 
 // --- Type Definitions ---
@@ -123,7 +123,7 @@ export async function handleGeneratePayload(input: GeneratePayloadInput): Promis
     }
 
     if (user.role === 'user' && (user.credits === undefined || user.credits <= 0)) {
-        return { error: "You have no credits left. Please contact an administrator." };
+        return { error: "You have no credits left. Please use an activation key." };
     }
 
     const result = await generatePayload(input);
@@ -151,4 +151,18 @@ export async function handleGeneratePayload(input: GeneratePayloadInput): Promis
     }
     return { error: "Failed to generate payload. Please try again." };
   }
+}
+
+
+export async function redeemActivationKeyAction(data: { email: string, key: string }): Promise<{ success: boolean; message: string; user?: PublicUser }> {
+    if (!data.key) {
+        return { success: false, message: "Activation key cannot be empty." };
+    }
+    try {
+        const updatedUser = await redeemActivationKeyByEmail(data.email, data.key);
+        const { password, ...publicUser } = updatedUser;
+        return { success: true, message: "Credits activated successfully!", user: publicUser };
+    } catch (error: any) {
+        return { success: false, message: error.message || "Failed to redeem key." };
+    }
 }

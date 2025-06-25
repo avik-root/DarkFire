@@ -13,6 +13,8 @@ export const UserSchema = z.object({
   codeGenerationEnabled: z.boolean().optional(),
   formSubmitted: z.boolean().optional(),
   credits: z.number().optional(),
+  activationKey: z.string().optional().nullable(),
+  activationCredits: z.number().optional().nullable(),
 });
 
 export const CreateUserSchema = z.object({

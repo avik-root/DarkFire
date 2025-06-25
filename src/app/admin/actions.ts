@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { getUsers as getUsersFromFile, deleteUserByEmail, updateUserCodeGenerationByEmail, updateUserCreditsByEmail } from "@/lib/auth";
+import { getUsers as getUsersFromFile, deleteUserByEmail, updateUserCodeGenerationByEmail, setActivationKeyByEmail } from "@/lib/auth";
 import type { UpdateAdminSchema } from "@/lib/auth-shared";
 import type { User } from '@/lib/auth-shared';
 
@@ -66,14 +66,21 @@ export async function manageUserPermissionAction(data: unknown) {
     }
 }
 
-export async function updateUserCreditsAction(data: { email: string; credits: number }) {
+const SetActivationKeySchema = z.object({
+    email: z.string().email(),
+    activationKey: z.string().min(10, "Activation key must be at least 10 characters."),
+    credits: z.number().int().min(1, "Credits must be at least 1."),
+});
+
+export async function setActivationKeyAction(data: unknown) {
+    const result = SetActivationKeySchema.safeParse(data);
+    if (!result.success) {
+        return { success: false, error: result.error.errors.map(e => e.message).join(', ') };
+    }
+    
     try {
-        const parsedCredits = parseInt(String(data.credits), 10);
-        if (isNaN(parsedCredits) || parsedCredits < 0) {
-            return { success: false, error: "Invalid credit amount." };
-        }
-        await updateUserCreditsByEmail(data.email, parsedCredits);
-        return { success: true, message: `Credits for ${data.email} set to ${parsedCredits}.` };
+        await setActivationKeyByEmail(result.data.email, result.data.activationKey, result.data.credits);
+        return { success: true, message: `Activation key for ${result.data.email} has been set.` };
     } catch (error: any) {
         return { success: false, error: error.message };
     }

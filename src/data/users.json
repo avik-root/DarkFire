@@ -1,3 +1,4 @@
+
 [
   {
     "id": "2025-06-25T16:12:15.758Z0.36067912149510284",
@@ -6,6 +7,9 @@
     "password": "$2a$10$duVV9Q510i06J9a8voNXzOHAdjLRXsFwInWVJ0.B8RptREcRrkZG.",
     "role": "user",
     "codeGenerationEnabled": true,
-    "formSubmitted": true
+    "formSubmitted": true,
+    "credits": 2,
+    "activationKey": null,
+    "activationCredits": 0
   }
 ]

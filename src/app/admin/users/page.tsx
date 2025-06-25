@@ -7,9 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Loader2, ShieldCheck, ShieldOff, Edit, Save } from "lucide-react";
+import { Trash2, Loader2, ShieldCheck, ShieldOff, Edit, Save, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getUsersAction, deleteUserAction, getTeamMembersAction, updateTeamMemberAction, manageUserPermissionAction, updateUserCreditsAction } from "@/app/admin/actions";
+import { getUsersAction, deleteUserAction, getTeamMembersAction, updateTeamMemberAction, manageUserPermissionAction, setActivationKeyAction } from "@/app/admin/actions";
 import type { PublicUser } from "@/lib/auth-shared";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -31,7 +31,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -74,8 +73,9 @@ export default function UserManagementPage() {
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
   const [secretCode, setSecretCode] = useState('');
   const [isManagingPermission, setIsManagingPermission] = useState(false);
+  const [activationKey, setActivationKey] = useState("");
   const [creditAmount, setCreditAmount] = useState<number | string>("");
-  const [isManagingCredits, setIsManagingCredits] = useState(false);
+  const [isManagingKey, setIsManagingKey] = useState(false);
 
   // Team Management state
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
@@ -157,22 +157,24 @@ export default function UserManagementPage() {
     setIsManagingPermission(false);
   }
 
-  const handleSetCredits = async () => {
-    if (!editingUser || creditAmount === "") return;
-    setIsManagingCredits(true);
+  const handleSetActivationKey = async () => {
+    if (!editingUser || activationKey === "" || creditAmount === "") return;
+    setIsManagingKey(true);
     
-    const result = await updateUserCreditsAction({
+    const result = await setActivationKeyAction({
         email: editingUser.email,
+        activationKey: activationKey,
         credits: Number(creditAmount),
     });
 
     if (result.success) {
         toast({ title: "Success", description: result.message });
         fetchUsers();
+        setEditingUser(null);
     } else {
         toast({ variant: "destructive", title: "Error", description: result.error });
     }
-    setIsManagingCredits(false);
+    setIsManagingKey(false);
   }
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -243,6 +245,7 @@ export default function UserManagementPage() {
                 if (!isOpen) { 
                     setEditingUser(null);
                     setSecretCode('');
+                    setActivationKey('');
                     setCreditAmount('');
                 }
             }}>
@@ -280,10 +283,7 @@ export default function UserManagementPage() {
                         <TableCell>{user.credits ?? 'N/A'}</TableCell>
                         <TableCell className="text-right space-x-2">
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => {
-                                setEditingUser(user);
-                                setCreditAmount(user.credits ?? 0);
-                            }}>
+                            <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>
                                 <Edit className="mr-2 h-3 w-3" />
                                 Manage
                             </Button>
@@ -350,17 +350,19 @@ export default function UserManagementPage() {
                       </div>
                       <Separator />
                        <div className="space-y-3">
-                          <h4 className="font-medium">Credits</h4>
-                          <div className="space-y-2">
-                            <Label htmlFor="credits">Set Credit Amount</Label>
-                            <div className="flex gap-2">
-                                <Input id="credits" type="number" value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} placeholder="e.g., 50" className="w-32" />
-                                 <Button onClick={handleSetCredits} disabled={isManagingCredits}>
-                                    {isManagingCredits ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                    Set Credits
-                                </Button>
+                          <h4 className="font-medium">Set Activation Key</h4>
+                            <div className="space-y-2">
+                                <Label htmlFor="activation-key">Activation Key (e.g., 256-bit hash)</Label>
+                                <Input id="activation-key" type="text" value={activationKey} onChange={(e) => setActivationKey(e.target.value)} placeholder="Enter a secure key" />
                             </div>
-                          </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="credits">Associated Credits</Label>
+                                <Input id="credits" type="number" value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} placeholder="e.g., 50" className="w-32" />
+                            </div>
+                            <Button onClick={handleSetActivationKey} disabled={isManagingKey}>
+                                {isManagingKey ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Key className="mr-2 h-4 w-4" />}
+                                Set Key & Credits
+                            </Button>
                       </div>
                   </div>
               </DialogContent>
