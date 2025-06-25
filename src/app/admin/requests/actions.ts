@@ -70,3 +70,20 @@ export async function approveRequestAction(email: string) {
         return { success: false, error: `Failed to approve request: ${error.message}` };
     }
 }
+
+export async function deleteRequestAction(email: string): Promise<{ success: boolean; message: string; error?: string }> {
+    try {
+        const requests = await readRequestsFile();
+        const initialCount = requests.length;
+        const updatedRequests = requests.filter(r => r.email !== email);
+
+        if (updatedRequests.length === initialCount) {
+            return { success: false, message: "Request not found." };
+        }
+
+        await writeRequestsFile(updatedRequests);
+        return { success: true, message: `Access request for ${email} has been deleted.` };
+    } catch (error: any) {
+        return { success: false, message: `Failed to delete request: ${error.message}`, error: error.message };
+    }
+}
