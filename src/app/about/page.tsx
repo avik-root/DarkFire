@@ -48,7 +48,7 @@ export default async function AboutPage({}: {}) {
   return (
     <div className="space-y-16 opacity-0 animate-fade-in-up">
       <section className="text-center">
-        <h1 className="text-5xl md:text-7xl font-headline tracking-tighter text-primary">About DarkFire</h1>
+        <h1 className="text-5xl md:text-7xl font-headline tracking-tighter text-primary">About DarkFire <span className="text-3xl md:text-5xl text-foreground/80">by MintFire</span></h1>
         <p className="mt-4 max-w-3xl mx-auto text-lg text-foreground/80">
           DarkFire is a premier web application from the creators at MintFire. We are a team of cybersecurity experts and AI researchers dedicated to revolutionizing the way security professionals approach their work. DarkFire was born from a simple idea: what if we could harness AI to augment human intuition and accelerate security operations?
         </p>
