@@ -289,13 +289,6 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
         <div className="pc-inside">
           <div className="pc-shine" />
           <div className="pc-glare" />
-
-          <div className="pc-content">
-            <div className="pc-details">
-              <h3>{displayName}</h3>
-              <p>{displayTitle}</p>
-            </div>
-          </div>
           
           <div className="pc-avatar-content">
             <img
@@ -312,11 +305,26 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
           </div>
           
           <Dialog>
-            <div className="pc-user-info">
-                <DialogTrigger asChild>
-                    <Button variant="outline" className="bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20 w-full pointer-events-auto">View Profile</Button>
-                </DialogTrigger>
-            </div>
+            {showUserInfo && (
+              <div className="pc-user-info">
+                  <div className="pc-user-details">
+                      <div className="pc-mini-avatar">
+                          <img src={miniAvatarUrl ?? avatarUrl} alt={displayName} loading="lazy" />
+                      </div>
+                      <div className="pc-user-text">
+                          <div className="pc-handle">{displayName}</div>
+                          <div className="pc-status">{displayTitle}</div>
+                      </div>
+                  </div>
+                  
+                  <div className="pc-social-links">
+                      <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20 pointer-events-auto">View</Button>
+                      </DialogTrigger>
+                  </div>
+              </div>
+            )}
+
             <DialogContent className="sm:max-w-md bg-card/80 backdrop-blur-sm text-foreground border-border/50">
                 <DialogHeader className="items-center text-center">
                   <Avatar className="w-24 h-24 mb-4 border-4 border-primary/50">
