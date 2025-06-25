@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -113,7 +112,7 @@ export default function PurchasePage() {
 
                             <div className="mt-8 text-center text-sm text-muted-foreground bg-card p-4 rounded-md border">
                                 <p className="font-semibold">How it works:</p>
-                                <p>1. After submitting, please contact <strong className="text-primary">payments@darkfire.dev</strong> with your registered email to complete the payment.</p>
+                                <p>1. After submitting, please contact <strong className="text-primary">mintfire.official@gmail.com</strong> with your registered email to complete the payment.</p>
                                 <p>2. Your credits will be reflected in your account within 24-36 hours of payment confirmation.</p>
                             </div>
 
