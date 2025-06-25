@@ -1,5 +1,5 @@
 
-import { ShieldAlert, Users, Target, Github, Linkedin, Mail } from "lucide-react";
+import { ShieldAlert, Users, Target, Github, Linkedin, Mail, Flame } from "lucide-react";
 import Image from "next/image";
 import ProfileCard from "@/components/profile-card";
 import "@/components/ProfileCard.css";
@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type TeamMember = {
   name: string;
@@ -49,8 +50,25 @@ export default async function AboutPage({}: {}) {
       <section className="text-center">
         <h1 className="text-5xl md:text-7xl font-headline tracking-tighter text-primary">About DarkFire</h1>
         <p className="mt-4 max-w-3xl mx-auto text-lg text-foreground/80">
-          We are a team of cybersecurity experts and AI researchers dedicated to revolutionizing the way security professionals approach their work. DarkFire was born from a simple idea: what if we could harness AI to augment human intuition and accelerate security operations?
+          DarkFire is a premier web application from our parent company, MintFire. We are a team of cybersecurity experts and AI researchers dedicated to revolutionizing the way security professionals approach their work. DarkFire was born from a simple idea: what if we could harness AI to augment human intuition and accelerate security operations?
         </p>
+      </section>
+
+      <section className="max-w-4xl mx-auto">
+        <Card className="bg-card/60 backdrop-blur-sm border-primary/20 shadow-lg shadow-primary/10">
+          <CardHeader className="items-center text-center">
+            <div className="p-3 bg-primary/10 rounded-full mb-3">
+              <Flame className="w-8 h-8 text-primary" />
+            </div>
+            <CardTitle className="text-3xl font-headline tracking-tight">Our Parent Company: MintFire</CardTitle>
+            <CardDescription className="text-muted-foreground">The Power Behind the Fire</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-lg text-foreground/80">
+              MintFire is a next-generation software development company focused on delivering expert solutions in Cybersecurity, Web3 technologies, and Blockchain innovation. We engineer cutting-edge, secure, and scalable solutions to empower businesses and individuals in the evolving decentralized digital landscape.
+            </p>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid md:grid-cols-2 gap-12 items-center">
