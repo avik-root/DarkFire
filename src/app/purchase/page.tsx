@@ -93,7 +93,7 @@ export default function PurchasePage() {
                                                 <FormControl>
                                                     <RadioGroupItem value={plan.id} className="sr-only" />
                                                 </FormControl>
-                                                <FormLabel className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer transition-all">
+                                                <FormLabel className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:ring-4 [&:has([data-state=checked])]:ring-primary/50 cursor-pointer transition-all">
                                                     {plan.icon}
                                                     <div className="text-center mt-4">
                                                         <h3 className="text-xl font-headline">{plan.name}</h3>
