@@ -2,18 +2,6 @@
 "use client";
 
 import React, { useEffect, useRef, useCallback, useMemo, FC } from "react";
-import { Github, Linkedin, Mail } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const DEFAULT_BEHIND_GRADIENT =
   "radial-gradient(farthest-side circle at var(--pointer-x) var(--pointer-y),hsla(266,100%,90%,var(--card-opacity)) 4%,hsla(266,50%,80%,calc(var(--card-opacity)*0.75)) 10%,hsla(266,25%,70%,calc(var(--card-opacity)*0.5)) 50%,hsla(266,0%,60%,0) 100%),radial-gradient(35% 52% at 55% 20%,#00ffaac4 0%,#073aff00 100%),radial-gradient(100% 100% at 50% 50%,#00c1ffff 1%,#073aff00 76%),conic-gradient(from 124deg at 50% 50%,#c137ffff 0%,#07c6ffff 40%,#07c6ffff 60%,#c137ffff 100%)";
@@ -55,17 +43,9 @@ interface ProfileCardProps {
   showBehindGradient?: boolean;
   className?: string;
   enableTilt?: boolean;
-  miniAvatarUrl?: string;
   name?: string;
   title?: string;
-  handle?: string;
-  status?: string;
-  showUserInfo?: boolean;
   dataAiHint?: string;
-  bio?: string;
-  github?: string;
-  linkedin?: string;
-  email?: string;
 }
 
 
@@ -78,24 +58,13 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
   showBehindGradient = true,
   className = "",
   enableTilt = true,
-  miniAvatarUrl,
   name,
-  title,
-  handle,
-  status,
-  showUserInfo = true,
   dataAiHint,
-  bio,
-  github,
-  linkedin,
-  email,
 }) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   
   const displayName = name ?? "Team Member";
-  const displayTitle = title ?? "Role";
-  const displayBio = bio ?? "No biography available.";
 
   const animationHandlers = useMemo(() => {
     if (!enableTilt) return null;
@@ -303,61 +272,6 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
               }}
             />
           </div>
-          
-          <Dialog>
-            {showUserInfo && (
-              <div className="pc-user-info">
-                  <div className="pc-user-details">
-                      <div className="pc-mini-avatar">
-                          <img src={miniAvatarUrl ?? avatarUrl} alt={displayName} loading="lazy" />
-                      </div>
-                      <div className="pc-user-text">
-                          <div className="pc-handle">{displayName}</div>
-                          <div className="pc-status">{displayTitle}</div>
-                      </div>
-                  </div>
-                  
-                  <div className="pc-social-links">
-                      <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20 pointer-events-auto">View</Button>
-                      </DialogTrigger>
-                  </div>
-              </div>
-            )}
-
-            <DialogContent className="sm:max-w-md bg-card/80 backdrop-blur-sm text-foreground border-border/50">
-                <DialogHeader className="items-center text-center">
-                  <Avatar className="w-24 h-24 mb-4 border-4 border-primary/50">
-                      <AvatarImage src={avatarUrl} alt={displayName} />
-                      <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <DialogTitle className="text-3xl font-headline">{displayName}</DialogTitle>
-                  <DialogDescription className="text-primary text-lg">{displayTitle}</DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                  <p className="text-center text-muted-foreground">{displayBio}</p>
-                </div>
-                <DialogFooter className="justify-center sm:justify-center">
-                    <div className="flex items-center gap-4">
-                      {github && (
-                        <a href={github} target="_blank" rel="noopener noreferrer" aria-label="GitHub profile" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
-                          <Github />
-                        </a>
-                      )}
-                      {linkedin && (
-                        <a href={linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
-                          <Linkedin />
-                        </a>
-                      )}
-                      {email && (
-                        <a href={`mailto:${email}`} aria-label="Email" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
-                          <Mail />
-                        </a>
-                      )}
-                    </div>
-                </DialogFooter>
-              </DialogContent>
-           </Dialog>
         </div>
       </section>
     </div>
