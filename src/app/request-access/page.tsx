@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { submitRequestAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,6 +22,9 @@ const requestFormSchema = z.object({
   fullName: z.string().min(3, { message: "Full name must be at least 3 characters." }),
   occupation: z.string().min(3, { message: "Occupation must be at least 3 characters." }),
   reason: z.string().min(20, { message: "Please provide a reason of at least 20 characters." }).max(500, "Reason cannot exceed 500 characters."),
+  idVerificationLink: z.string().url({ message: "Please enter a valid URL." }).refine(link => link.startsWith('https://drive.google.com/'), {
+    message: "Link must be a valid Google Drive URL.",
+  }),
   terms: z.literal<boolean>(true, {
     errorMap: () => ({ message: "You must accept the terms and conditions." }),
   }),
@@ -36,7 +39,7 @@ export default function RequestAccessPage() {
 
     const form = useForm<RequestFormValues>({
         resolver: zodResolver(requestFormSchema),
-        defaultValues: { fullName: "", occupation: "", reason: "", terms: false },
+        defaultValues: { fullName: "", occupation: "", reason: "", idVerificationLink: "", terms: false },
     });
 
     useEffect(() => {
@@ -113,6 +116,14 @@ export default function RequestAccessPage() {
                                 )}/>
                                 <FormField control={form.control} name="reason" render={({ field }) => (
                                     <FormItem><FormLabel>Reason for Access</FormLabel><FormControl><Textarea placeholder="Please describe how you intend to use this tool for ethical and educational purposes." className="resize-y" {...field} /></FormControl><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="idVerificationLink" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>ID Verification Link</FormLabel>
+                                        <FormControl><Input placeholder="Google Drive link to your ID (Aadhar, Voter, etc.)" {...field} /></FormControl>
+                                        <FormDescription className="text-xs">Please provide a shareable Google Drive link to a photo of your ID. Ensure link sharing is enabled.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}/>
                             </div>
                         </CardContent>

@@ -15,6 +15,7 @@ type RequestEntry = {
     fullName: string;
     occupation: string;
     reason: string;
+    idVerificationLink: string;
     status: 'pending' | 'approved';
     timestamp: string;
 };
@@ -42,6 +43,7 @@ const RequestFormSchema = z.object({
   fullName: z.string().min(3, "Full name must be at least 3 characters."),
   occupation: z.string().min(3, "Occupation must be at least 3 characters."),
   reason: z.string().min(20, "Reason must be at least 20 characters.").max(500, "Reason cannot exceed 500 characters."),
+  idVerificationLink: z.string().url({ message: "Please enter a valid Google Drive link." }),
   email: z.string().email(),
 });
 export type RequestFormInput = z.infer<typeof RequestFormSchema>;

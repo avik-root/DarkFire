@@ -11,7 +11,7 @@ import type { RequestEntry } from "./actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, LinkIcon } from "lucide-react";
 
 export default function AccessRequestsPage() {
     const [requests, setRequests] = useState<RequestEntry[]>([]);
@@ -63,6 +63,7 @@ export default function AccessRequestsPage() {
                                 <TableHead>Full Name</TableHead>
                                 <TableHead>Occupation</TableHead>
                                 <TableHead>Reason</TableHead>
+                                <TableHead>ID Link</TableHead>
                                 <TableHead className="text-right w-[120px]">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -70,7 +71,7 @@ export default function AccessRequestsPage() {
                             {loading ? (
                                 Array.from({ length: 3 }).map((_, i) => (
                                     <TableRow key={i}>
-                                        <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
+                                        <TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell>
                                     </TableRow>
                                 ))
                             ) : requests.length > 0 ? (
@@ -83,6 +84,12 @@ export default function AccessRequestsPage() {
                                         <TableCell>{req.fullName}</TableCell>
                                         <TableCell>{req.occupation}</TableCell>
                                         <TableCell className="max-w-xs truncate">{req.reason}</TableCell>
+                                        <TableCell>
+                                            <a href={req.idVerificationLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                                                <LinkIcon className="h-4 w-4" />
+                                                View
+                                            </a>
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             {req.status === 'approved' ? (
                                                 <Badge variant="secondary" className="text-green-500">
@@ -104,7 +111,7 @@ export default function AccessRequestsPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                                         No access requests have been submitted yet.
                                     </TableCell>
                                 </TableRow>

@@ -13,6 +13,7 @@ export type RequestEntry = {
     fullName: string;
     occupation: string;
     reason: string;
+    idVerificationLink: string;
     status: 'pending' | 'approved';
     timestamp: string;
 };
