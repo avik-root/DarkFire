@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/layout/header";
@@ -6,6 +7,7 @@ import Footer from "@/components/layout/footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 import fs from 'fs/promises';
 import path from 'path';
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "DarkFire",
@@ -30,6 +32,10 @@ export default async function RootLayout({
     // If file doesn't exist, is empty, or has invalid JSON, default to signup.
   }
 
+  const headersList = headers();
+  const pathname = headersList.get("next-url") || "";
+  const isAdminPage = pathname.startsWith('/admin');
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -39,11 +45,11 @@ export default async function RootLayout({
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col bg-background">
         <AuthProvider>
-          <Header />
-          <main className="flex-grow container mx-auto px-4 py-8">
+          {!isAdminPage && <Header />}
+          <div className={cn("flex-grow", !isAdminPage && "container mx-auto px-4 py-8")}>
             {children}
-          </main>
-          <Footer adminLoginUrl={adminLoginUrl} />
+          </div>
+          {!isAdminPage && <Footer adminLoginUrl={adminLoginUrl} />}
           <Toaster />
         </AuthProvider>
       </body>
