@@ -50,7 +50,7 @@ export default async function AboutPage({}: {}) {
       <section className="text-center">
         <h1 className="text-5xl md:text-7xl font-headline tracking-tighter text-primary">About DarkFire</h1>
         <p className="mt-4 max-w-3xl mx-auto text-lg text-foreground/80">
-          DarkFire is a premier web application from our parent company, MintFire. We are a team of cybersecurity experts and AI researchers dedicated to revolutionizing the way security professionals approach their work. DarkFire was born from a simple idea: what if we could harness AI to augment human intuition and accelerate security operations?
+          DarkFire is a premier web application from the creators at MintFire. We are a team of cybersecurity experts and AI researchers dedicated to revolutionizing the way security professionals approach their work. DarkFire was born from a simple idea: what if we could harness AI to augment human intuition and accelerate security operations?
         </p>
       </section>
 
@@ -60,7 +60,7 @@ export default async function AboutPage({}: {}) {
             <div className="p-3 bg-primary/10 rounded-full mb-3">
               <Flame className="w-8 h-8 text-primary" />
             </div>
-            <CardTitle className="text-3xl font-headline tracking-tight">Our Parent Company: MintFire</CardTitle>
+            <CardTitle className="text-3xl font-headline tracking-tight">About MintFire</CardTitle>
             <CardDescription className="text-muted-foreground">The Power Behind the Fire</CardDescription>
           </CardHeader>
           <CardContent>
