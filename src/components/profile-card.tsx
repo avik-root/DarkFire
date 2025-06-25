@@ -59,12 +59,14 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
   className = "",
   enableTilt = true,
   name,
+  title,
   dataAiHint,
 }) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   
   const displayName = name ?? "Team Member";
+  const displayTitle = title ?? "Team Role";
 
   const animationHandlers = useMemo(() => {
     if (!enableTilt) return null;
@@ -258,19 +260,24 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
         <div className="pc-inside">
           <div className="pc-shine" />
           <div className="pc-glare" />
-          
-          <div className="pc-avatar-content">
-            <img
-              className="avatar"
-              src={avatarUrl}
-              alt={`${displayName} avatar`}
-              loading="lazy"
-              data-ai-hint={dataAiHint}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-              }}
-            />
+          <div className="pc-content">
+            <div className="pc-details">
+              <h3>{displayName}</h3>
+              <p>{displayTitle}</p>
+            </div>
+            <div className="pc-avatar-content">
+              <img
+                className="avatar"
+                src={avatarUrl}
+                alt={`${displayName} avatar`}
+                loading="lazy"
+                data-ai-hint={dataAiHint}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                }}
+              />
+            </div>
           </div>
         </div>
       </section>

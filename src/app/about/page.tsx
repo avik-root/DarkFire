@@ -117,10 +117,6 @@ export default async function AboutPage({}: {}) {
                   avatarUrl={member.avatar}
                   dataAiHint={member.hint}
                 />
-                <div className="text-center">
-                   <h3 className="text-2xl font-headline">{member.name}</h3>
-                   <p className="text-sm text-muted-foreground">{member.role}</p>
-                </div>
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button variant="outline">View Profile</Button>
