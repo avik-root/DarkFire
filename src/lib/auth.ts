@@ -4,7 +4,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import bcrypt from 'bcryptjs';
-import type { User, CreateUserInput, PublicUser } from './auth-shared';
+import type { User, CreateUserInput, PublicUser, ActivationKey } from './auth-shared';
 
 const dataDir = path.join(process.cwd(), 'src', 'data');
 const regularUsersFilePath = path.join(dataDir, 'users.json');
@@ -67,8 +67,7 @@ export async function addUser(data: CreateUserInput): Promise<PublicUser> {
     codeGenerationEnabled: role === 'admin',
     formSubmitted: role === 'admin',
     credits: role === 'admin' ? 9999 : 2,
-    activationKey: null,
-    activationCredits: 0,
+    activationKeys: [],
   };
   
   if (isFirstUser) {
@@ -151,17 +150,45 @@ export async function updateUserCodeGenerationByEmail(email: string, enabled: bo
   }
 }
 
-export async function setActivationKeyByEmail(email: string, key: string, credits: number): Promise<void> {
+export async function addActivationKeyByEmail(email: string, key: string, credits: number): Promise<User> {
     const users = await readUserFile(regularUsersFilePath);
     const userIndex = users.findIndex(u => u.email === email);
-    if (userIndex > -1) {
-        users[userIndex].activationKey = key;
-        users[userIndex].activationCredits = credits;
-        await writeUserFile(regularUsersFilePath, users);
-    } else {
+    if (userIndex === -1) {
         throw new Error('User not found.');
     }
+    const user = users[userIndex];
+    if (!user.activationKeys) {
+        user.activationKeys = [];
+    }
+
+    if (user.activationKeys.some(ak => ak.key === key)) {
+        throw new Error('This activation key already exists for the user.');
+    }
+
+    user.activationKeys.push({ key, credits });
+    users[userIndex] = user;
+    await writeUserFile(regularUsersFilePath, users);
+    return user;
 }
+
+
+export async function deleteActivationKeyForEmail(email: string, key: string): Promise<User> {
+    const users = await readUserFile(regularUsersFilePath);
+    const userIndex = users.findIndex(u => u.email === email);
+    if (userIndex === -1) {
+        throw new Error('User not found.');
+    }
+
+    const user = users[userIndex];
+    if (user.activationKeys) {
+        user.activationKeys = user.activationKeys.filter(ak => ak.key !== key);
+    }
+    
+    users[userIndex] = user;
+    await writeUserFile(regularUsersFilePath, users);
+    return user;
+}
+
 
 export async function redeemActivationKeyByEmail(email: string, key: string): Promise<User> {
     const users = await readUserFile(regularUsersFilePath);
@@ -171,13 +198,17 @@ export async function redeemActivationKeyByEmail(email: string, key: string): Pr
     }
     
     const user = users[userIndex];
-    if (!user.activationKey || user.activationKey !== key) {
+    const keyIndex = user.activationKeys?.findIndex(ak => ak.key === key);
+
+    if (keyIndex === undefined || keyIndex === -1 || !user.activationKeys) {
         throw new Error('Invalid or expired activation key.');
     }
-
-    user.credits = (user.credits || 0) + (user.activationCredits || 0);
-    user.activationKey = null;
-    user.activationCredits = 0;
+    
+    const keyData = user.activationKeys[keyIndex];
+    user.credits = (user.credits || 0) + keyData.credits;
+    
+    // Remove the used key
+    user.activationKeys.splice(keyIndex, 1);
 
     users[userIndex] = user;
     await writeUserFile(regularUsersFilePath, users);

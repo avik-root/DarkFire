@@ -4,6 +4,12 @@ import { z } from 'zod';
 export const USER_COOKIE = 'darkfire_user_session';
 
 // --- Zod Schemas ---
+
+export const ActivationKeySchema = z.object({
+  key: z.string(),
+  credits: z.number().int().min(1),
+});
+
 export const UserSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -13,8 +19,7 @@ export const UserSchema = z.object({
   codeGenerationEnabled: z.boolean().optional(),
   formSubmitted: z.boolean().optional(),
   credits: z.number().optional(),
-  activationKey: z.string().optional().nullable(),
-  activationCredits: z.number().optional().nullable(),
+  activationKeys: z.array(ActivationKeySchema).optional(),
 });
 
 export const CreateUserSchema = z.object({
@@ -87,5 +92,6 @@ export const UpdateAdminSchema = z.object({
 
 // --- Type Definitions ---
 export type User = z.infer<typeof UserSchema>;
+export type ActivationKey = z.infer<typeof ActivationKeySchema>;
 export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 export type PublicUser = Omit<User, 'password'>;

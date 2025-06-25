@@ -90,7 +90,6 @@ const DeleteActivationKeySchema = z.object({
   email: z.string().email(),
   key: z.string(),
 });
-
 export async function deleteActivationKeyAction(data: unknown): Promise<{success: boolean, message?: string, error?: string}> {
   const result = DeleteActivationKeySchema.safeParse(data);
   if (!result.success) {

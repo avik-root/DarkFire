@@ -1,1 +1,14 @@
-[]
+
+[
+  {
+    "id": "2025-06-25T20:25:59.341Z0.704865325128746",
+    "name": "Ritam Parui",
+    "email": "ritam@gmail.com",
+    "password": "$2a$10$xXDnMys/qecMl8yz/Vd8i.8El8ebi8qcv3V.fgRdPNG8UAkKFk2xa",
+    "role": "user",
+    "codeGenerationEnabled": true,
+    "formSubmitted": true,
+    "credits": 5,
+    "activationKeys": []
+  }
+]
