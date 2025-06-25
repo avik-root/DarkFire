@@ -5,69 +5,122 @@ import { generatePayload, GeneratePayloadInput } from "@/ai/flows/generate-paylo
 import fs from 'fs/promises';
 import path from 'path';
 
-// This is a simplified analytics tracking mechanism for demonstration.
-// In a production app, you'd use a database to avoid race conditions.
-async function trackGenerationEvent(type: 'success' | 'failure', details?: { language: string; payloadType: string }) {
-    const analyticsFilePath = path.join(process.cwd(), 'src', 'data', 'analytics.json');
-    
-    type AnalyticsData = {
-        payloadsGenerated: number;
-        successfulGenerations: number;
-        failedGenerations: number;
-        generationHistory: { month: string; generated: number }[];
-        languageCounts: { [key: string]: number };
-        payloadTypeCounts: { [key: string]: number };
-    };
-    
-    let data: AnalyticsData;
+// --- Type Definitions ---
+type AnalyticsData = {
+    payloadsGenerated: number;
+    successfulGenerations: number;
+    failedGenerations: number;
+    generationHistory: { month: string; generated: number }[];
+    languageCounts: { [key: string]: number };
+    payloadTypeCounts: { [key: string]: number };
+};
 
+type ActivityLogEntry = {
+    timestamp: string;
+    status: 'success' | 'failure';
+    language: string;
+    payloadType: string;
+};
+
+// --- File Paths ---
+const dataDir = path.join(process.cwd(), 'src', 'data');
+const analyticsFilePath = path.join(dataDir, 'analytics.json');
+const activityLogFilePath = path.join(dataDir, 'activity-log.json');
+const MAX_LOG_ENTRIES = 20;
+
+// --- Unified Event Tracking ---
+async function trackGenerationEvent(type: 'success' | 'failure', details: { language: string; payloadType: string }) {
+    // --- Log individual activity ---
+    let activityLog: ActivityLogEntry[];
+    try {
+        const logContents = await fs.readFile(activityLogFilePath, 'utf-8');
+        activityLog = JSON.parse(logContents);
+    } catch (e) {
+        activityLog = [];
+    }
+
+    const newLogEntry: ActivityLogEntry = {
+        timestamp: new Date().toISOString(),
+        status: type,
+        ...details,
+    };
+
+    activityLog.unshift(newLogEntry);
+    if (activityLog.length > MAX_LOG_ENTRIES) {
+        activityLog.splice(MAX_LOG_ENTRIES);
+    }
+    
+    try {
+        await fs.writeFile(activityLogFilePath, JSON.stringify(activityLog, null, 2), 'utf-8');
+    } catch (error) {
+        console.error("Failed to write activity log:", error);
+    }
+
+    // --- Update aggregate analytics ---
+    if (type === 'failure') return; // Don't update aggregates for failures for now, besides the failure count handled in handleGeneratePayload
+
+    let analyticsData: AnalyticsData;
     try {
         const fileContents = await fs.readFile(analyticsFilePath, 'utf-8');
-        data = JSON.parse(fileContents);
+        analyticsData = JSON.parse(fileContents);
     } catch (e) {
-        // If file doesn't exist or is empty, initialize it.
-        data = {
+        analyticsData = {
             payloadsGenerated: 0,
             successfulGenerations: 0,
             failedGenerations: 0,
-            generationHistory: [
-                { month: "Jan", generated: 0 }, { month: "Feb", generated: 0 },
-                { month: "Mar", generated: 0 }, { month: "Apr", generated: 0 },
-                { month: "May", generated: 0 }, { month: "Jun", generated: 0 },
-                { month: "Jul", generated: 0 }, { month: "Aug", generated: 0 },
-                { month: "Sep", generated: 0 }, { month: "Oct", generated: 0 },
-                { month: "Nov", generated: 0 }, { month: "Dec", generated: 0 }
-            ],
+            generationHistory: Array.from({ length: 12 }, (_, i) => ({ month: new Date(0, i).toLocaleString('default', { month: 'short' }), generated: 0 })),
             languageCounts: {},
             payloadTypeCounts: {}
         };
     }
     
-    if (type === 'success' && details) {
-        data.payloadsGenerated = (data.payloadsGenerated || 0) + 1;
-        data.successfulGenerations = (data.successfulGenerations || 0) + 1;
+    analyticsData.payloadsGenerated = (analyticsData.payloadsGenerated || 0) + 1;
+    analyticsData.successfulGenerations = (analyticsData.successfulGenerations || 0) + 1;
 
-        // Increment count for the current month
-        const currentMonth = new Date().toLocaleString('default', { month: 'short' });
-        const monthEntry = data.generationHistory.find((h: any) => h.month === currentMonth);
-        if (monthEntry) {
-            monthEntry.generated += 1;
-        }
-
-        // Initialize counts if they don't exist
-        data.languageCounts = data.languageCounts || {};
-        data.payloadTypeCounts = data.payloadTypeCounts || {};
-
-        // Increment counts for language and payload type
-        data.languageCounts[details.language] = (data.languageCounts[details.language] || 0) + 1;
-        data.payloadTypeCounts[details.payloadType] = (data.payloadTypeCounts[details.payloadType] || 0) + 1;
-
-    } else if (type === 'failure') {
-        data.failedGenerations = (data.failedGenerations || 0) + 1;
+    const currentMonth = new Date().toLocaleString('default', { month: 'short' });
+    const monthEntry = analyticsData.generationHistory.find(h => h.month === currentMonth);
+    if (monthEntry) {
+        monthEntry.generated += 1;
     }
 
+    analyticsData.languageCounts = analyticsData.languageCounts || {};
+    analyticsData.payloadTypeCounts = analyticsData.payloadTypeCounts || {};
+
+    analyticsData.languageCounts[details.language] = (analyticsData.languageCounts[details.language] || 0) + 1;
+    analyticsData.payloadTypeCounts[details.payloadType] = (analyticsData.payloadTypeCounts[details.payloadType] || 0) + 1;
+
     try {
-        await fs.writeFile(analyticsFilePath, JSON.stringify(data, null, 2), 'utf-8');
+        await fs.writeFile(analyticsFilePath, JSON.stringify(analyticsData, null, 2), 'utf-8');
+    } catch (error) {
+        console.error("Failed to write analytics data:", error);
+    }
+}
+
+
+async function trackFailure(details: { language: string; payloadType: string }) {
+    // Log individual activity
+    logActivity({ status: 'failure', ...details }).catch(console.error);
+
+    // Update aggregate failure count
+    let analyticsData: AnalyticsData;
+    try {
+        const fileContents = await fs.readFile(analyticsFilePath, 'utf-8');
+        analyticsData = JSON.parse(fileContents);
+    } catch (e) {
+         analyticsData = {
+            payloadsGenerated: 0,
+            successfulGenerations: 0,
+            failedGenerations: 0,
+            generationHistory: Array.from({ length: 12 }, (_, i) => ({ month: new Date(0, i).toLocaleString('default', { month: 'short' }), generated: 0 })),
+            languageCounts: {},
+            payloadTypeCounts: {}
+        };
+    }
+
+    analyticsData.failedGenerations = (analyticsData.failedGenerations || 0) + 1;
+
+    try {
+        await fs.writeFile(analyticsFilePath, JSON.stringify(analyticsData, null, 2), 'utf-8');
     } catch (error) {
         console.error("Failed to write analytics data:", error);
     }
@@ -77,14 +130,10 @@ async function trackGenerationEvent(type: 'success' | 'failure', details?: { lan
 export async function handleGeneratePayload(input: GeneratePayloadInput): Promise<{ code: string } | { error: string }> {
   try {
     const result = await generatePayload(input);
-    
-    // Asynchronously track successful generation without blocking the response
     trackGenerationEvent('success', { language: input.language, payloadType: input.payloadType }).catch(console.error);
-
     return result;
   } catch (error) {
-    // Asynchronously track failed generation
-    trackGenerationEvent('failure').catch(console.error);
+    trackFailure({ language: input.language, payloadType: input.payloadType }).catch(console.error);
     console.error("Error generating payload:", error);
     return { error: "Failed to generate payload. Please try again." };
   }

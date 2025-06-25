@@ -277,3 +277,35 @@ export async function getAnalyticsDataAction() {
         return { success: false, error: error.message };
     }
 }
+
+// --- Activity Log Action ---
+const activityLogFilePath = path.join(dataDir, 'activity-log.json');
+
+export type ActivityLogEntry = {
+    timestamp: string;
+    status: 'success' | 'failure';
+    language: string;
+    payloadType: string;
+};
+
+async function readActivityLog(): Promise<ActivityLogEntry[]> {
+    try {
+        const data = await fs.readFile(activityLogFilePath, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return []; // File doesn't exist yet, return empty array
+        }
+        console.error("Error reading activity log file:", error);
+        return [];
+    }
+}
+
+export async function getActivityLogAction() {
+    try {
+        const log = await readActivityLog();
+        return { success: true, log };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
