@@ -31,6 +31,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -283,7 +284,10 @@ export default function UserManagementPage() {
                         <TableCell>{user.credits ?? 'N/A'}</TableCell>
                         <TableCell className="text-right space-x-2">
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>
+                            <Button variant="outline" size="sm" onClick={() => {
+                                setEditingUser(user);
+                                setCreditAmount(user.credits ?? 0);
+                            }}>
                                 <Edit className="mr-2 h-3 w-3" />
                                 Manage
                             </Button>
@@ -350,7 +354,7 @@ export default function UserManagementPage() {
                       </div>
                       <Separator />
                        <div className="space-y-3">
-                          <h4 className="font-medium">Set Activation Key</h4>
+                          <h4 className="font-medium">Set Activation Key & Credits</h4>
                             <div className="space-y-2">
                                 <Label htmlFor="activation-key">Activation Key (e.g., 256-bit hash)</Label>
                                 <Input id="activation-key" type="text" value={activationKey} onChange={(e) => setActivationKey(e.target.value)} placeholder="Enter a secure key" />
@@ -361,7 +365,7 @@ export default function UserManagementPage() {
                             </div>
                             <Button onClick={handleSetActivationKey} disabled={isManagingKey}>
                                 {isManagingKey ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Key className="mr-2 h-4 w-4" />}
-                                Set Key & Credits
+                                Set Credits
                             </Button>
                       </div>
                   </div>
@@ -455,3 +459,5 @@ export default function UserManagementPage() {
     </div>
   );
 }
+
+    
