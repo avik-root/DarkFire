@@ -7,9 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, ShieldCheck, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getUsersAction, deleteUserAction, getTeamMembersAction, updateTeamMemberAction } from "@/app/admin/actions";
+import { getUsersAction, deleteUserAction, getTeamMembersAction, updateTeamMemberAction, manageUserPermissionAction } from "@/app/admin/actions";
 import type { PublicUser } from "@/lib/auth-shared";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -33,12 +33,13 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 const teamMemberUpdateSchema = z.object({
   name: z.string().min(1, 'Name cannot be empty.'),
@@ -68,6 +69,9 @@ export default function UserManagementPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loadingTeam, setLoadingTeam] = useState(true);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
+  const [secretCode, setSecretCode] = useState('');
+  const [isManaging, setIsManaging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
@@ -125,6 +129,26 @@ export default function UserManagementPage() {
       toast({ variant: "destructive", title: "Error", description: result.error });
     }
   };
+
+  const handleManagePermission = async (action: 'enable' | 'disable') => {
+    if (!editingUser) return;
+    setIsManaging(true);
+    const result = await manageUserPermissionAction({
+      email: editingUser.email,
+      action,
+      secretCode,
+    });
+
+    if (result.success) {
+      toast({ title: "Success", description: result.message });
+      fetchUsers();
+      setEditingUser(null);
+      setSecretCode('');
+    } else {
+      toast({ variant: "destructive", title: "Error", description: result.error });
+    }
+    setIsManaging(false);
+  }
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -195,8 +219,8 @@ export default function UserManagementPage() {
                 <TableRow>
                   <TableHead>User Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="text-right w-[100px]">Actions</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right w-[180px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -205,8 +229,8 @@ export default function UserManagementPage() {
                       <TableRow key={i}>
                         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-36" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-12" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-8 w-8 rounded-md ml-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-8 w-32 rounded-md ml-auto" /></TableCell>
                       </TableRow>
                     ))
                 ) : users.length > 0 ? (
@@ -214,8 +238,18 @@ export default function UserManagementPage() {
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell className="capitalize">{user.role}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>
+                         <Badge variant={user.codeGenerationEnabled ? 'default' : 'secondary'}>
+                          {user.codeGenerationEnabled ? 'Enabled' : 'Disabled'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Dialog open={editingUser?.id === user.id} onOpenChange={(isOpen) => !isOpen && setEditingUser(null)}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>Manage</Button>
+                            </DialogTrigger>
+                        </Dialog>
+
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" disabled={user.role === 'admin'}>
@@ -252,6 +286,32 @@ export default function UserManagementPage() {
                 )}
               </TableBody>
             </Table>
+            {editingUser && (
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Manage Permissions for {editingUser?.email}</DialogTitle>
+                        <DialogDescription>
+                        Enter the secret code to change permissions for this user.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="secret-code">Secret Code</Label>
+                            <Input id="secret-code" type="password" value={secretCode} onChange={(e) => setSecretCode(e.target.value)} placeholder="Enter secret code" />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="destructive" onClick={() => handleManagePermission('disable')} disabled={isManaging}>
+                            {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
+                            Disable
+                        </Button>
+                        <Button onClick={() => handleManagePermission('enable')} disabled={isManaging}>
+                            {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                            Enable
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            )}
           </CardContent>
         </Card>
         
@@ -261,27 +321,20 @@ export default function UserManagementPage() {
                 <CardDescription>Update profiles for the "About Us" page.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[80px]">Avatar</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead className="text-right w-[100px]">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loadingTeam ? (
-                          Array.from({ length: 2 }).map((_, i) => (
-                            <TableRow key={i}>
-                              <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
-                              <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                              <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                              <TableCell className="text-right"><Skeleton className="h-8 w-16 rounded-md ml-auto" /></TableCell>
+                {loadingTeam ? (
+                    <div className="h-24 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+                ) : teamMembers.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[80px]">Avatar</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead className="text-right w-[100px]">Actions</TableHead>
                             </TableRow>
-                          ))
-                      ) : teamMembers.length > 0 ? (
-                        teamMembers.map((member) => (
+                        </TableHeader>
+                        <TableBody>
+                        {teamMembers.map((member) => (
                         <TableRow key={member.handle}>
                             <TableCell>
                                 <Avatar>
@@ -308,27 +361,15 @@ export default function UserManagementPage() {
                                   <Form {...form}>
                                     <form onSubmit={form.handleSubmit(onUpdateSubmit)} className="space-y-4 max-h-[60vh] overflow-y-auto pr-4">
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          <FormField control={form.control} name="name" render={({ field }) => (
-                                              <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                          )} />
-                                          <FormField control={form.control} name="role" render={({ field }) => (
-                                              <FormItem><FormLabel>Role</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                          )} />
+                                          <div className="space-y-2"><Label>Name</Label><Input {...form.register("name")} />{form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}</div>
+                                          <div className="space-y-2"><Label>Role</Label><Input {...form.register("role")} />{form.formState.errors.role && <p className="text-sm text-destructive">{form.formState.errors.role.message}</p>}</div>
                                       </div>
-                                       <FormField control={form.control} name="bio" render={({ field }) => (
-                                          <FormItem><FormLabel>Description / Bio</FormLabel><FormControl><Textarea className="resize-y" {...field} /></FormControl><FormMessage /></FormItem>
-                                      )} />
+                                       <div className="space-y-2"><Label>Description / Bio</Label><Textarea className="resize-y" {...form.register("bio")} />{form.formState.errors.bio && <p className="text-sm text-destructive">{form.formState.errors.bio.message}</p>}</div>
                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          <FormField control={form.control} name="github" render={({ field }) => (
-                                              <FormItem><FormLabel>GitHub URL</FormLabel><FormControl><Input placeholder="https://github.com/username" {...field} /></FormControl><FormMessage /></FormItem>
-                                          )} />
-                                          <FormField control={form.control} name="linkedin" render={({ field }) => (
-                                              <FormItem><FormLabel>LinkedIn URL</FormLabel><FormControl><Input placeholder="https://linkedin.com/in/username" {...field} /></FormControl><FormMessage /></FormItem>
-                                          )} />
+                                          <div className="space-y-2"><Label>GitHub URL</Label><Input placeholder="https://github.com/username" {...form.register("github")} />{form.formState.errors.github && <p className="text-sm text-destructive">{form.formState.errors.github.message}</p>}</div>
+                                          <div className="space-y-2"><Label>LinkedIn URL</Label><Input placeholder="https://linkedin.com/in/username" {...form.register("linkedin")} />{form.formState.errors.linkedin && <p className="text-sm text-destructive">{form.formState.errors.linkedin.message}</p>}</div>
                                       </div>
-                                      <FormField control={form.control} name="email" render={({ field }) => (
-                                          <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="member@example.com" {...field} /></FormControl><FormMessage /></FormItem>
-                                      )} />
+                                      <div className="space-y-2"><Label>Email Address</Label><Input placeholder="member@example.com" {...form.register("email")} />{form.formState.errors.email && <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>}</div>
                                       <div className="space-y-2">
                                         <Label htmlFor="picture">New Avatar</Label>
                                         <Input id="picture" type="file" accept="image/png, image/jpeg" onChange={handleFileChange} />
@@ -347,15 +388,12 @@ export default function UserManagementPage() {
                               </Dialog>
                             </TableCell>
                         </TableRow>
-                      ))) : (
-                        <TableRow>
-                          <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                            No team members found.
-                          </TableCell>
-                        </TableRow>
-                      )}
+                      ))}
                     </TableBody>
                 </Table>
+                 ) : (
+                    <div className="h-24 text-center text-muted-foreground flex items-center justify-center">No team members found.</div>
+                )}
             </CardContent>
         </Card>
       </div>

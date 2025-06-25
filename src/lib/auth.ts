@@ -136,3 +136,14 @@ export async function approveUserByEmail(email: string): Promise<void> {
         throw new Error('User not found.');
     }
 }
+
+export async function updateUserCodeGenerationByEmail(email: string, enabled: boolean): Promise<void> {
+  const users = await readUserFile(regularUsersFilePath);
+  const userIndex = users.findIndex(u => u.email === email);
+  if (userIndex > -1) {
+    users[userIndex].codeGenerationEnabled = enabled;
+    await writeUserFile(regularUsersFilePath, users);
+  } else {
+    throw new Error('User not found.');
+  }
+}
