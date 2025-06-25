@@ -214,104 +214,102 @@ export default function UserManagementPage() {
             <CardDescription>View and manage regular user accounts.</CardDescription>
           </CardHeader>
           <CardContent>
-             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right w-[180px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-36" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-8 w-32 rounded-md ml-auto" /></TableCell>
+            <Dialog open={!!editingUser} onOpenChange={(isOpen) => !isOpen && setEditingUser(null)}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right w-[180px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-36" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                          <TableCell className="text-right"><Skeleton className="h-8 w-32 rounded-md ml-auto" /></TableCell>
+                        </TableRow>
+                      ))
+                  ) : users.length > 0 ? (
+                    users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.codeGenerationEnabled ? 'default' : 'secondary'}>
+                            {user.codeGenerationEnabled ? 'Enabled' : 'Disabled'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>Manage</Button>
+                          </DialogTrigger>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" disabled={user.role === 'admin'}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the user account for <span className="font-medium text-foreground">{user.email}</span>.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => handleDeleteUser(user.email)}
+                                >
+                                  Delete User
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
                       </TableRow>
                     ))
-                ) : users.length > 0 ? (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                         <Badge variant={user.codeGenerationEnabled ? 'default' : 'secondary'}>
-                          {user.codeGenerationEnabled ? 'Enabled' : 'Disabled'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Dialog open={editingUser?.id === user.id} onOpenChange={(isOpen) => !isOpen && setEditingUser(null)}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>Manage</Button>
-                            </DialogTrigger>
-                        </Dialog>
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" disabled={user.role === 'admin'}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the user account for <span className="font-medium text-foreground">{user.email}</span>.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => handleDeleteUser(user.email)}
-                              >
-                                Delete User
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                        No users have signed up yet.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                      No users have signed up yet.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            {editingUser && (
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Manage Permissions for {editingUser?.email}</DialogTitle>
-                        <DialogDescription>
-                        Enter the secret code to change permissions for this user.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="secret-code">Secret Code</Label>
-                            <Input id="secret-code" type="password" value={secretCode} onChange={(e) => setSecretCode(e.target.value)} placeholder="Enter secret code" />
-                        </div>
-                    </div>
-                    <DialogFooter className="gap-2">
-                        <Button variant="destructive" onClick={() => handleManagePermission('disable')} disabled={isManaging}>
-                            {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
-                            Disable
-                        </Button>
-                        <Button onClick={() => handleManagePermission('enable')} disabled={isManaging}>
-                            {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                            Enable
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            )}
+                  )}
+                </TableBody>
+              </Table>
+              <DialogContent>
+                  <DialogHeader>
+                      <DialogTitle>Manage Permissions for {editingUser?.email}</DialogTitle>
+                      <DialogDescription>
+                      Enter the secret code to change permissions for this user.
+                      </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="secret-code">Secret Code</Label>
+                          <Input id="secret-code" type="password" value={secretCode} onChange={(e) => setSecretCode(e.target.value)} placeholder="Enter secret code" />
+                      </div>
+                  </div>
+                  <DialogFooter className="gap-2">
+                      <Button variant="destructive" onClick={() => handleManagePermission('disable')} disabled={isManaging}>
+                          {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
+                          Disable
+                      </Button>
+                      <Button onClick={() => handleManagePermission('enable')} disabled={isManaging}>
+                          {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                          Enable
+                      </Button>
+                  </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
         
