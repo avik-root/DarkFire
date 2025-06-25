@@ -66,7 +66,6 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
   const cardRef = useRef<HTMLElement>(null);
   
   const displayName = name ?? "Team Member";
-  const displayTitle = title ?? "Team Role";
 
   const animationHandlers = useMemo(() => {
     if (!enableTilt) return null;
@@ -261,10 +260,6 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
           <div className="pc-shine" />
           <div className="pc-glare" />
           <div className="pc-content">
-            <div className="pc-details">
-              <h3>{displayName}</h3>
-              <p>{displayTitle}</p>
-            </div>
             <div className="pc-avatar-content">
               <img
                 className="avatar"
