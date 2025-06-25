@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useCallback, useMemo, FC } from "react";
@@ -78,10 +79,10 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
   className = "",
   enableTilt = true,
   miniAvatarUrl,
-  name = "Javi A. Torres",
-  title = "Software Engineer",
-  handle = "javicodes",
-  status = "Online",
+  name,
+  title,
+  handle,
+  status,
   showUserInfo = true,
   dataAiHint,
   bio,
@@ -91,6 +92,10 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
 }) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
+  
+  const displayName = name ?? "Team Member";
+  const displayTitle = title ?? "Role";
+  const displayBio = bio ?? "No biography available.";
 
   const animationHandlers = useMemo(() => {
     if (!enableTilt) return null;
@@ -287,8 +292,8 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
 
           <div className="pc-content">
             <div className="pc-details">
-              <h3>{name}</h3>
-              <p>{title}</p>
+              <h3>{displayName}</h3>
+              <p>{displayTitle}</p>
             </div>
           </div>
           
@@ -296,7 +301,7 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
             <img
               className="avatar"
               src={avatarUrl}
-              alt={`${name || "User"} avatar`}
+              alt={`${displayName} avatar`}
               loading="lazy"
               data-ai-hint={dataAiHint}
               onError={(e) => {
@@ -306,47 +311,45 @@ const ProfileCardComponent: FC<ProfileCardProps> = ({
             />
           </div>
           
-          {showUserInfo && (
-             <Dialog>
-              <div className="pc-user-info">
-                  <DialogTrigger asChild>
-                      <Button variant="outline" className="bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20 w-full pointer-events-auto">View Profile</Button>
-                  </DialogTrigger>
-              </div>
-              <DialogContent className="sm:max-w-md bg-card/80 backdrop-blur-sm text-foreground border-border/50">
-                  <DialogHeader className="items-center text-center">
-                    <Avatar className="w-24 h-24 mb-4 border-4 border-primary/50">
-                        <AvatarImage src={avatarUrl} alt={name} />
-                        <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <DialogTitle className="text-3xl font-headline">{name}</DialogTitle>
-                    <DialogDescription className="text-primary text-lg">{title}</DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <p className="text-center text-muted-foreground">{bio}</p>
-                  </div>
-                  <DialogFooter className="justify-center sm:justify-center">
-                      <div className="flex items-center gap-4">
-                        {github && (
-                          <a href={github} target="_blank" rel="noopener noreferrer" aria-label="GitHub profile" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
-                            <Github />
-                          </a>
-                        )}
-                        {linkedin && (
-                          <a href={linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
-                            <Linkedin />
-                          </a>
-                        )}
-                        {email && (
-                          <a href={`mailto:${email}`} aria-label="Email" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
-                            <Mail />
-                          </a>
-                        )}
-                      </div>
-                  </DialogFooter>
-                </DialogContent>
-             </Dialog>
-          )}
+          <Dialog>
+            <div className="pc-user-info">
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="bg-white/10 text-white hover:bg-white/20 hover:text-white border-white/20 w-full pointer-events-auto">View Profile</Button>
+                </DialogTrigger>
+            </div>
+            <DialogContent className="sm:max-w-md bg-card/80 backdrop-blur-sm text-foreground border-border/50">
+                <DialogHeader className="items-center text-center">
+                  <Avatar className="w-24 h-24 mb-4 border-4 border-primary/50">
+                      <AvatarImage src={avatarUrl} alt={displayName} />
+                      <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <DialogTitle className="text-3xl font-headline">{displayName}</DialogTitle>
+                  <DialogDescription className="text-primary text-lg">{displayTitle}</DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <p className="text-center text-muted-foreground">{displayBio}</p>
+                </div>
+                <DialogFooter className="justify-center sm:justify-center">
+                    <div className="flex items-center gap-4">
+                      {github && (
+                        <a href={github} target="_blank" rel="noopener noreferrer" aria-label="GitHub profile" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
+                          <Github />
+                        </a>
+                      )}
+                      {linkedin && (
+                        <a href={linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
+                          <Linkedin />
+                        </a>
+                      )}
+                      {email && (
+                        <a href={`mailto:${email}`} aria-label="Email" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
+                          <Mail />
+                        </a>
+                      )}
+                    </div>
+                </DialogFooter>
+              </DialogContent>
+           </Dialog>
         </div>
       </section>
     </div>
