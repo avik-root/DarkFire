@@ -1,4 +1,3 @@
-
 {
   "payloadsGenerated": 0,
   "successfulGenerations": 0,
@@ -52,5 +51,7 @@
       "month": "Dec",
       "generated": 0
     }
-  ]
+  ],
+  "languageCounts": {},
+  "payloadTypeCounts": {}
 }

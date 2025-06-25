@@ -235,6 +235,8 @@ type AnalyticsData = {
     successfulGenerations: number;
     failedGenerations: number;
     generationHistory: { month: string; generated: number }[];
+    languageCounts: { [key: string]: number };
+    payloadTypeCounts: { [key: string]: number };
 };
 
 async function readAnalyticsData(): Promise<AnalyticsData> {
@@ -249,7 +251,9 @@ async function readAnalyticsData(): Promise<AnalyticsData> {
             { "month": "Jul", "generated": 0 }, { "month": "Aug", "generated": 0 },
             { "month": "Sep", "generated": 0 }, { "month": "Oct", "generated": 0 },
             { "month": "Nov", "generated": 0 }, { "month": "Dec", "generated": 0 }
-        ]
+        ],
+        languageCounts: {},
+        payloadTypeCounts: {}
     };
     try {
         const data = await fs.readFile(analyticsFilePath, 'utf-8');

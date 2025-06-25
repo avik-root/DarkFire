@@ -7,7 +7,7 @@ import path from 'path';
 
 // This is a simplified analytics tracking mechanism for demonstration.
 // In a production app, you'd use a database to avoid race conditions.
-async function trackGenerationEvent(type: 'success' | 'failure') {
+async function trackGenerationEvent(type: 'success' | 'failure', details?: { language: string; payloadType: string }) {
     const analyticsFilePath = path.join(process.cwd(), 'src', 'data', 'analytics.json');
     
     type AnalyticsData = {
@@ -15,6 +15,8 @@ async function trackGenerationEvent(type: 'success' | 'failure') {
         successfulGenerations: number;
         failedGenerations: number;
         generationHistory: { month: string; generated: number }[];
+        languageCounts: { [key: string]: number };
+        payloadTypeCounts: { [key: string]: number };
     };
     
     let data: AnalyticsData;
@@ -35,11 +37,13 @@ async function trackGenerationEvent(type: 'success' | 'failure') {
                 { month: "Jul", generated: 0 }, { month: "Aug", generated: 0 },
                 { month: "Sep", generated: 0 }, { month: "Oct", generated: 0 },
                 { month: "Nov", generated: 0 }, { month: "Dec", generated: 0 }
-            ]
+            ],
+            languageCounts: {},
+            payloadTypeCounts: {}
         };
     }
     
-    if (type === 'success') {
+    if (type === 'success' && details) {
         data.payloadsGenerated = (data.payloadsGenerated || 0) + 1;
         data.successfulGenerations = (data.successfulGenerations || 0) + 1;
 
@@ -49,6 +53,15 @@ async function trackGenerationEvent(type: 'success' | 'failure') {
         if (monthEntry) {
             monthEntry.generated += 1;
         }
+
+        // Initialize counts if they don't exist
+        data.languageCounts = data.languageCounts || {};
+        data.payloadTypeCounts = data.payloadTypeCounts || {};
+
+        // Increment counts for language and payload type
+        data.languageCounts[details.language] = (data.languageCounts[details.language] || 0) + 1;
+        data.payloadTypeCounts[details.payloadType] = (data.payloadTypeCounts[details.payloadType] || 0) + 1;
+
     } else if (type === 'failure') {
         data.failedGenerations = (data.failedGenerations || 0) + 1;
     }
@@ -66,7 +79,7 @@ export async function handleGeneratePayload(input: GeneratePayloadInput): Promis
     const result = await generatePayload(input);
     
     // Asynchronously track successful generation without blocking the response
-    trackGenerationEvent('success').catch(console.error);
+    trackGenerationEvent('success', { language: input.language, payloadType: input.payloadType }).catch(console.error);
 
     return result;
   } catch (error) {
