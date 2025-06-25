@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ShieldAlert, LogOut, ShieldCheck, HardHat } from 'lucide-react';
+import { ShieldAlert, LogOut, ShieldCheck, HardHat, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -33,12 +33,20 @@ export default function Header() {
                   </Link>
                 </Button>
               ) : (
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/playground">
-                    <HardHat className="mr-2 h-4 w-4" />
-                    Playground
-                  </Link>
-                </Button>
+                <>
+                    <Button asChild variant="outline" size="sm">
+                        <Link href="/purchase">
+                            <Heart className="mr-2 h-4 w-4" />
+                            Purchase Key
+                        </Link>
+                    </Button>
+                    <Button asChild variant="ghost" size="sm">
+                    <Link href="/playground">
+                        <HardHat className="mr-2 h-4 w-4" />
+                        Playground
+                    </Link>
+                    </Button>
+                </>
               )}
               <Button onClick={logout} variant="outline" size="sm">
                 <LogOut className="mr-2 h-4 w-4" />
