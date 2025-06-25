@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSettingsAction, saveSettingsAction, resetApplicationDataAction, updateAdminProfileAction } from "@/app/admin/actions";
+import { getSettingsAction, saveSettingsAction, resetApplicationDataAction, updateAdminProfileAction, uploadLogoAction } from "@/app/admin/actions";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { UpdateAdminSchema } from "@/lib/auth-shared";
@@ -40,6 +40,7 @@ export default function AdminSettingsPage() {
     const [isSavingSettings, setIsSavingSettings] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     // Password visibility states
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -237,6 +238,34 @@ export default function AdminSettingsPage() {
                 </CardContent>
             </Card>
         </form>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Logo Management</CardTitle>
+            <CardDescription>Upload a PNG or JPG file to be used as the site logo in the header. Recommended size: 128x128px.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={async (formData) => {
+              setIsUploading(true);
+              const result = await uploadLogoAction(formData);
+              if (result.success) {
+                toast({ title: "Success", description: result.message });
+                window.location.reload(); 
+              } else {
+                toast({ variant: "destructive", title: "Error", description: result.error });
+              }
+              setIsUploading(false);
+            }}>
+              <div className="flex items-center gap-4">
+                <Input name="logo" type="file" accept="image/png, image/jpeg" required />
+                <Button type="submit" disabled={isUploading}>
+                  {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Upload Logo
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
         <Card className="border-destructive">
             <CardHeader>

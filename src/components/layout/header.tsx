@@ -5,15 +5,20 @@ import Link from 'next/link';
 import { ShieldAlert, LogOut, ShieldCheck, HardHat, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
-export default function Header() {
+export default function Header({ logoUrl }: { logoUrl: string | null }) {
   const { isAuthenticated, logout, user, isAdmin } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 py-4 px-8 border-b border-card bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-2xl font-headline text-primary hover:text-primary/80 transition-colors">
-          <ShieldAlert className="h-8 w-8" />
+          {logoUrl ? (
+            <Image src={logoUrl} alt="DarkFire Logo" width={32} height={32} className="h-8 w-8 object-contain" unoptimized />
+          ) : (
+            <ShieldAlert className="h-8 w-8" />
+          )}
           <h1>DarkFire</h1>
         </Link>
         <nav className="hidden md:flex gap-6 text-sm font-medium">

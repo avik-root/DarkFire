@@ -385,3 +385,49 @@ export async function getActivityLogAction() {
         return { success: false, error: error.message };
     }
 }
+
+// --- Logo Management Action ---
+export async function uploadLogoAction(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
+  const file = formData.get('logo') as File;
+
+  if (!file || file.size === 0) {
+    return { success: false, error: 'No file was selected for upload.' };
+  }
+
+  const allowedTypes = ['image/png', 'image/jpeg'];
+  if (!allowedTypes.includes(file.type)) {
+    return { success: false, error: 'Only .png and .jpg files are allowed.' };
+  }
+
+  const extension = file.type.split('/')[1];
+  const filename = `logo.${extension}`;
+  const publicDir = path.join(process.cwd(), 'public');
+  const logoPath = path.join(publicDir, filename);
+  const logoInfoPath = path.join(publicDir, 'logo-info.json');
+
+  try {
+    await fs.mkdir(publicDir, { recursive: true });
+
+    // Clean up old logo files to ensure only one exists
+    const filesInPublic = await fs.readdir(publicDir);
+    for (const f of filesInPublic) {
+      if (f.startsWith('logo.')) {
+        await fs.unlink(path.join(publicDir, f));
+      }
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await fs.writeFile(logoPath, buffer);
+
+    const logoInfo = {
+      url: `/${filename}`,
+      timestamp: new Date().getTime(),
+    };
+    await fs.writeFile(logoInfoPath, JSON.stringify(logoInfo));
+
+    return { success: true, message: 'Logo uploaded successfully!' };
+  } catch (error: any) {
+    console.error('Logo upload error:', error);
+    return { success: false, error: 'Server error during logo upload.' };
+  }
+}
