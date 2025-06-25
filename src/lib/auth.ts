@@ -36,6 +36,22 @@ async function writeUserFile(filePath: string, users: User[]): Promise<void> {
   }
 }
 
+async function findUserAndFile(email: string): Promise<{ user: User | null; users: User[]; filePath: string }> {
+    const adminUsers = await readUserFile(adminUsersFilePath);
+    let userIndex = adminUsers.findIndex(u => u.email === email);
+    if (userIndex !== -1) {
+        return { user: adminUsers[userIndex], users: adminUsers, filePath: adminUsersFilePath };
+    }
+
+    const regularUsers = await readUserFile(regularUsersFilePath);
+    userIndex = regularUsers.findIndex(u => u.email === email);
+    if (userIndex !== -1) {
+        return { user: regularUsers[userIndex], users: regularUsers, filePath: regularUsersFilePath };
+    }
+    return { user: null, users: [], filePath: '' };
+}
+
+
 // --- Public API ---
 export async function getUsers(): Promise<PublicUser[]> {
   // Only return regular users for management purposes in the dashboard.
@@ -68,6 +84,7 @@ export async function addUser(data: CreateUserInput): Promise<PublicUser> {
     formSubmitted: role === 'admin',
     credits: role === 'admin' ? 9999 : 2,
     activationKeys: [],
+    twoFactorEnabled: false,
   };
   
   if (isFirstUser) {
@@ -81,11 +98,7 @@ export async function addUser(data: CreateUserInput): Promise<PublicUser> {
 }
 
 export async function verifyUser(email: string, pass: string): Promise<PublicUser | null> {
-    const regularUsers = await readUserFile(regularUsersFilePath);
-    const adminUsers = await readUserFile(adminUsersFilePath);
-    
-    // Check admins first, then regular users
-    const user = adminUsers.find(u => u.email === email) || regularUsers.find(u => u.email === email);
+    const { user } = await findUserAndFile(email);
 
     if (!user) {
         return null;
@@ -96,6 +109,20 @@ export async function verifyUser(email: string, pass: string): Promise<PublicUse
         return null;
     }
 
+    const { password, ...publicUser } = user;
+    return publicUser;
+}
+
+export async function verifyUserPin(email: string, pin: string): Promise<PublicUser | null> {
+    const { user } = await findUserAndFile(email);
+    if (!user || !user.twoFactorEnabled || !user.twoFactorPin) {
+        return null;
+    }
+    
+    const isPinValid = await bcrypt.compare(pin, user.twoFactorPin);
+    if (!isPinValid) {
+        return null;
+    }
     const { password, ...publicUser } = user;
     return publicUser;
 }
@@ -129,7 +156,7 @@ export async function updateUserFormStatus(email: string): Promise<User> {
 
 export async function approveUserByEmail(email: string): Promise<void> {
     const users = await readUserFile(regularUsersFilePath);
-    const userIndex = users.findIndex(u => u.email === email);
+    const userIndex = users.findIndex(r => r.email === email);
     if (userIndex > -1) {
         users[userIndex].codeGenerationEnabled = true;
         await writeUserFile(regularUsersFilePath, users);
@@ -231,4 +258,24 @@ export async function decrementUserCredit(email: string): Promise<User | null> {
         return null; // Not enough credits
     }
     return null; // User not found
+}
+
+export async function updateUserTwoFactor(email: string, pin: string | null, enabled: boolean): Promise<User> {
+    const { user, users, filePath } = await findUserAndFile(email);
+    if (!user) {
+        throw new Error("User not found.");
+    }
+
+    const userIndex = users.findIndex(u => u.id === user.id);
+
+    user.twoFactorEnabled = enabled;
+    if (enabled && pin) {
+        user.twoFactorPin = await bcrypt.hash(pin, 10);
+    } else {
+        user.twoFactorPin = undefined;
+    }
+    
+    users[userIndex] = user;
+    await writeUserFile(filePath, users);
+    return user;
 }

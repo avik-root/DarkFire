@@ -20,6 +20,8 @@ export const UserSchema = z.object({
   formSubmitted: z.boolean().optional(),
   credits: z.number().optional(),
   activationKeys: z.array(ActivationKeySchema).optional(),
+  twoFactorEnabled: z.boolean().default(false).optional(),
+  twoFactorPin: z.string().optional(),
 });
 
 export const CreateUserSchema = z.object({

@@ -2,7 +2,7 @@
 "use server";
 
 import { z } from "zod";
-import { addUser, verifyUser } from "@/lib/auth";
+import { addUser, verifyUser, verifyUserPin } from "@/lib/auth";
 import { CreateUserSchema } from "@/lib/auth-shared";
 
 export async function signupAction(data: unknown): Promise<{ success: boolean; message: string; user?: any }> {
@@ -26,7 +26,7 @@ const LoginSchema = z.object({
   password: z.string(),
 });
 
-export async function loginAction(data: unknown): Promise<{ success: boolean; message: string; user?: any }> {
+export async function loginAction(data: unknown): Promise<{ success: boolean; message: string; user?: any, twoFactorRequired?: boolean }> {
     const result = LoginSchema.safeParse(data);
 
     if (!result.success) {
@@ -36,6 +36,9 @@ export async function loginAction(data: unknown): Promise<{ success: boolean; me
     try {
         const user = await verifyUser(result.data.email, result.data.password);
         if (user) {
+            if (user.twoFactorEnabled) {
+                return { success: true, message: "Please enter your PIN.", twoFactorRequired: true };
+            }
             return { success: true, message: "Login successful!", user };
         } else {
             return { success: false, message: "Invalid email or password." };
@@ -43,4 +46,27 @@ export async function loginAction(data: unknown): Promise<{ success: boolean; me
     } catch (error: any) {
         return { success: false, message: error.message || "An unexpected error occurred." };
     }
+}
+
+const VerifyPinSchema = z.object({
+  email: z.string().email(),
+  pin: z.string().length(6, "PIN must be 6 digits."),
+});
+
+export async function verifyPinAction(data: unknown): Promise<{ success: boolean; message: string; user?: any }> {
+  const result = VerifyPinSchema.safeParse(data);
+  if (!result.success) {
+    return { success: false, message: result.error.errors.map(e => e.message).join(", ") };
+  }
+
+  try {
+    const user = await verifyUserPin(result.data.email, result.data.pin);
+    if (user) {
+        return { success: true, message: "Login successful!", user };
+    } else {
+        return { success: false, message: "Invalid PIN." };
+    }
+  } catch (error: any) {
+    return { success: false, message: error.message || "An unexpected error occurred." };
+  }
 }

@@ -5,9 +5,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { getUsers as getUsersFromFile, deleteUserByEmail, updateUserCodeGenerationByEmail, addActivationKeyByEmail, deleteActivationKeyForEmail } from "@/lib/auth";
+import { getUsers as getUsersFromFile, deleteUserByEmail, updateUserCodeGenerationByEmail, addActivationKeyByEmail, deleteActivationKeyForEmail, updateUserTwoFactor } from "@/lib/auth";
 import type { UpdateAdminSchema } from "@/lib/auth-shared";
-import type { User } from '@/lib/auth-shared';
+import type { User, PublicUser } from '@/lib/auth-shared';
 
 const dataDir = path.join(process.cwd(), 'src', 'data');
 
@@ -303,6 +303,52 @@ export async function updateAdminProfileAction(userId: string, data: z.infer<typ
     }
 }
 
+const AdminTwoFactorSchema = z.object({
+    email: z.string().email(),
+    enabled: z.boolean(),
+    pin: z.string().optional(),
+    password: z.string().min(1, "Password is required to change 2FA settings."),
+}).refine(data => {
+    if (data.enabled) {
+        return data.pin && data.pin.length === 6 && /^\d+$/.test(data.pin);
+    }
+    return true;
+}, {
+    message: "A 6-digit PIN is required to enable.",
+    path: ["pin"],
+});
+
+export async function updateAdminTwoFactorAction(data: unknown): Promise<{ success: boolean; error?: string; message?: string, user?: PublicUser }> {
+    const result = AdminTwoFactorSchema.safeParse(data);
+    if (!result.success) {
+        return { success: false, error: result.error.errors.map(e => e.message).join(', ') };
+    }
+
+    const { email, enabled, pin, password: currentPassword } = result.data;
+    
+    try {
+        const admins = JSON.parse(await fs.readFile(adminFilePath, 'utf-8')) as User[];
+        const adminIndex = admins.findIndex(admin => admin.email === email);
+        if (adminIndex === -1) {
+            return { success: false, error: "Admin user not found." };
+        }
+
+        const admin = admins[adminIndex];
+        const isPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+        if (!isPasswordValid) {
+            return { success: false, error: "Incorrect password." };
+        }
+
+        const updatedUser = await updateUserTwoFactor(email, pin || null, enabled);
+        const { password, ...publicUser } = updatedUser;
+        const message = enabled ? "2-step verification enabled." : "2-step verification disabled.";
+        return { success: true, user: publicUser, message };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+
 // --- Analytics Actions ---
 const analyticsFilePath = path.join(dataDir, 'analytics.json');
 
@@ -425,7 +471,6 @@ export async function uploadLogoAction(formData: FormData): Promise<{ success: b
 
     const logoInfo = {
       url: `/${filename}`,
-      timestamp: new Date().getTime(),
     };
     await fs.writeFile(logoInfoPath, JSON.stringify(logoInfo));
 

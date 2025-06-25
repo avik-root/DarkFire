@@ -12,9 +12,9 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSettingsAction, saveSettingsAction, resetApplicationDataAction, updateAdminProfileAction, uploadLogoAction } from "@/app/admin/actions";
+import { getSettingsAction, saveSettingsAction, resetApplicationDataAction, updateAdminProfileAction, uploadLogoAction, updateAdminTwoFactorAction } from "@/app/admin/actions";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { UpdateAdminSchema } from "@/lib/auth-shared";
 import {
   AlertDialog,
@@ -31,6 +31,26 @@ import PasswordStrengthMeter from "@/components/password-strength-meter";
 
 type AdminProfileFormValues = z.infer<typeof UpdateAdminSchema>;
 
+const TwoFactorFormSchema = z.object({
+  pin: z.string().optional(),
+  enabled: z.boolean(),
+  password: z.string(),
+}).refine((data) => {
+    if (data.enabled) {
+        return data.pin && /^\d{6}$/.test(data.pin);
+    }
+    return true;
+}, {
+    message: "A 6-digit PIN is required to enable.",
+    path: ["pin"],
+}).refine(data => data.enabled ? !!data.password : true, {
+    message: "Your password is required to enable 2FA.",
+    path: ["password"],
+});
+
+type TwoFactorFormValues = z.infer<typeof TwoFactorFormSchema>;
+
+
 export default function AdminSettingsPage() {
     const { toast } = useToast();
     const { user, updateUser } = useAuth();
@@ -38,6 +58,7 @@ export default function AdminSettingsPage() {
     // Loading states
     const [isFetchingSettings, setIsFetchingSettings] = useState(true);
     const [isSavingSettings, setIsSavingSettings] = useState(false);
+    const [isSaving2FA, setIsSaving2FA] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -52,12 +73,19 @@ export default function AdminSettingsPage() {
     const [allowRegistrations, setAllowRegistrations] = useState(true);
     const [apiKey, setApiKey] = useState("");
 
-    const form = useForm<AdminProfileFormValues>({
+    const profileForm = useForm<AdminProfileFormValues>({
         resolver: zodResolver(UpdateAdminSchema),
         defaultValues: { name: "", email: "", currentPassword: "", password: "", confirmPassword: "" },
     });
     
-    const passwordForStrengthMeter = form.watch("password");
+    const twoFactorForm = useForm<TwoFactorFormValues>({
+        resolver: zodResolver(TwoFactorFormSchema),
+        defaultValues: { pin: "", enabled: user?.twoFactorEnabled ?? false, password: "" },
+    });
+
+    const passwordForStrengthMeter = profileForm.watch("password");
+    const twoFactorIsEnabled = twoFactorForm.watch("enabled");
+
 
     useEffect(() => {
         // Fetch initial general settings
@@ -78,16 +106,21 @@ export default function AdminSettingsPage() {
 
         // Populate admin profile form with current user data
         if (user) {
-            form.reset({
+            profileForm.reset({
                 name: user.name,
                 email: user.email,
                 currentPassword: "",
                 password: "",
                 confirmPassword: "",
             });
+            twoFactorForm.reset({
+                pin: "",
+                enabled: user.twoFactorEnabled ?? false,
+                password: "",
+            });
         }
 
-    }, [user, form, toast]);
+    }, [user, profileForm, twoFactorForm, toast]);
 
     const onAdminProfileSubmit = async (data: AdminProfileFormValues) => {
         if (!user) return;
@@ -98,7 +131,7 @@ export default function AdminSettingsPage() {
         if (result.success && result.user) {
             toast({ title: "Success", description: result.message });
             updateUser(result.user); // Update user in auth context
-            form.reset({ ...data, currentPassword: "", password: "", confirmPassword: "" });
+            profileForm.reset({ ...data, currentPassword: "", password: "", confirmPassword: "" });
         } else {
             toast({ variant: "destructive", title: "Error", description: result.error });
         }
@@ -118,6 +151,22 @@ export default function AdminSettingsPage() {
         }
         setIsSavingSettings(false);
     };
+    
+    const onTwoFactorSubmit = async (data: TwoFactorFormValues) => {
+        if (!user) return;
+        setIsSaving2FA(true);
+        const result = await updateAdminTwoFactorAction({ ...data, email: user.email });
+
+        if (result.success && result.user) {
+            toast({ title: "Success", description: result.message });
+            updateUser(result.user);
+            twoFactorForm.reset({ pin: "", enabled: result.user.twoFactorEnabled, password: "" });
+        } else {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        }
+        setIsSaving2FA(false);
+    }
+
 
     const handleResetData = async () => {
         setIsResetting(true);
@@ -140,23 +189,23 @@ export default function AdminSettingsPage() {
                 <CardDescription>Update your personal administrator account details.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onAdminProfileSubmit)} className="space-y-4 max-w-sm">
-                        <FormField control={form.control} name="name" render={({ field }) => (
+                <Form {...profileForm}>
+                    <form onSubmit={profileForm.handleSubmit(onAdminProfileSubmit)} className="space-y-4 max-w-sm">
+                        <FormField control={profileForm.control} name="name" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Name</FormLabel>
                                 <FormControl><Input {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormField control={profileForm.control} name="email" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl><Input type="email" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <FormField control={form.control} name="currentPassword" render={({ field }) => (
+                        <FormField control={profileForm.control} name="currentPassword" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Current Password</FormLabel>
                                 <FormControl>
@@ -170,7 +219,7 @@ export default function AdminSettingsPage() {
                                 <FormMessage />
                             </FormItem>
                         )} />
-                        <FormField control={form.control} name="password" render={({ field }) => (
+                        <FormField control={profileForm.control} name="password" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>New Password</FormLabel>
                                 <FormControl>
@@ -184,7 +233,7 @@ export default function AdminSettingsPage() {
                                 <FormMessage />
                             </FormItem>
                         )} />
-                         <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                         <FormField control={profileForm.control} name="confirmPassword" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Confirm New Password</FormLabel>
                                 <FormControl>
@@ -199,9 +248,64 @@ export default function AdminSettingsPage() {
                             </FormItem>
                         )} />
                         <PasswordStrengthMeter password={passwordForStrengthMeter} />
-                        <Button type="submit" disabled={isUpdatingProfile || form.formState.isSubmitting}>
-                            {(isUpdatingProfile || form.formState.isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={isUpdatingProfile || profileForm.formState.isSubmitting}>
+                            {(isUpdatingProfile || profileForm.formState.isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Update Profile
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Security Settings</CardTitle>
+                <CardDescription>Manage 2-step verification for your admin account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...twoFactorForm}>
+                    <form onSubmit={twoFactorForm.handleSubmit(onTwoFactorSubmit)} className="space-y-4 max-w-sm">
+                        <FormField
+                            control={twoFactorForm.control}
+                            name="enabled"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                    <div className="space-y-0.5">
+                                        <FormLabel>Enable 2-Step Verification</FormLabel>
+                                        <FormDescription>Secure your account with a 6-digit PIN.</FormDescription>
+                                    </div>
+                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        {twoFactorIsEnabled && (
+                             <FormField
+                                control={twoFactorForm.control}
+                                name="pin"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>6-Digit PIN</FormLabel>
+                                        <FormControl><Input type="password" maxLength={6} placeholder="Enter a 6-digit PIN" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
+                        <FormField
+                            control={twoFactorForm.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Current Password</FormLabel>
+                                    <FormControl><Input type="password" placeholder="Enter your password to save" {...field} /></FormControl>
+                                    <FormDescription>Required to update security settings.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="submit" disabled={isSaving2FA}>
+                            {isSaving2FA && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Security Settings
                         </Button>
                     </form>
                 </Form>
