@@ -28,7 +28,7 @@ export default function AdminLayout({
 
   return (
     <SidebarProvider defaultOpen>
-      <div className="md:hidden flex items-center justify-between p-4 border-b">
+      <div className="md:hidden flex items-center justify-between px-4 border-b bg-background fixed top-0 left-0 right-0 z-20 h-14">
          <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-headline text-primary">
             <ShieldAlert className="h-7 w-7" />
             <h1>DarkFire Admin</h1>
@@ -106,7 +106,7 @@ export default function AdminLayout({
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="pt-14 md:pt-0">
          <div className="p-4 md:p-6">
             {children}
          </div>
