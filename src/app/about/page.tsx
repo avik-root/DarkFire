@@ -149,7 +149,7 @@ export default async function AboutPage({}: {}) {
                                   <Linkedin />
                                 </a>
                               )}
-                              {email && (
+                              {member.email && (
                                 <a href={`mailto:${member.email}`} aria-label="Email" className="p-2 rounded-full bg-accent/20 hover:bg-accent/40 transition-colors">
                                   <Mail />
                                 </a>
