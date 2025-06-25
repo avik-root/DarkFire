@@ -29,6 +29,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
