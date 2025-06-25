@@ -7,9 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Loader2, ShieldCheck, ShieldOff } from "lucide-react";
+import { Trash2, Loader2, ShieldCheck, ShieldOff, Edit, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getUsersAction, deleteUserAction, getTeamMembersAction, updateTeamMemberAction, manageUserPermissionAction } from "@/app/admin/actions";
+import { getUsersAction, deleteUserAction, getTeamMembersAction, updateTeamMemberAction, manageUserPermissionAction, updateUserCreditsAction } from "@/app/admin/actions";
 import type { PublicUser } from "@/lib/auth-shared";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -30,7 +30,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
@@ -40,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 const teamMemberUpdateSchema = z.object({
   name: z.string().min(1, 'Name cannot be empty.'),
@@ -68,12 +68,19 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loadingTeam, setLoadingTeam] = useState(true);
-  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  
+  // User Management state
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
   const [secretCode, setSecretCode] = useState('');
-  const [isManaging, setIsManaging] = useState(false);
+  const [isManagingPermission, setIsManagingPermission] = useState(false);
+  const [creditAmount, setCreditAmount] = useState<number | string>("");
+  const [isManagingCredits, setIsManagingCredits] = useState(false);
+
+  // Team Management state
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
   const { toast } = useToast();
   
   const form = useForm<TeamMemberUpdateFormValues>({
@@ -124,7 +131,7 @@ export default function UserManagementPage() {
     const result = await deleteUserAction(email);
     if (result.success) {
       toast({ title: "Success", description: "User deleted successfully."});
-      fetchUsers(); // Refresh the user list
+      fetchUsers();
     } else {
       toast({ variant: "destructive", title: "Error", description: result.error });
     }
@@ -132,7 +139,7 @@ export default function UserManagementPage() {
 
   const handleManagePermission = async (action: 'enable' | 'disable') => {
     if (!editingUser) return;
-    setIsManaging(true);
+    setIsManagingPermission(true);
     const result = await manageUserPermissionAction({
       email: editingUser.email,
       action,
@@ -142,12 +149,29 @@ export default function UserManagementPage() {
     if (result.success) {
       toast({ title: "Success", description: result.message });
       fetchUsers();
-      setEditingUser(null);
       setSecretCode('');
     } else {
       toast({ variant: "destructive", title: "Error", description: result.error });
     }
-    setIsManaging(false);
+    setIsManagingPermission(false);
+  }
+
+  const handleSetCredits = async () => {
+    if (!editingUser || creditAmount === "") return;
+    setIsManagingCredits(true);
+    
+    const result = await updateUserCreditsAction({
+        email: editingUser.email,
+        credits: Number(creditAmount),
+    });
+
+    if (result.success) {
+        toast({ title: "Success", description: result.message });
+        fetchUsers();
+    } else {
+        toast({ variant: "destructive", title: "Error", description: result.error });
+    }
+    setIsManagingCredits(false);
   }
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -214,13 +238,20 @@ export default function UserManagementPage() {
             <CardDescription>View and manage regular user accounts.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Dialog open={!!editingUser} onOpenChange={(isOpen) => !isOpen && setEditingUser(null)}>
+            <Dialog open={!!editingUser} onOpenChange={(isOpen) => {
+                if (!isOpen) { 
+                    setEditingUser(null);
+                    setSecretCode('');
+                    setCreditAmount('');
+                }
+            }}>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>User Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Credits</TableHead>
                     <TableHead className="text-right w-[180px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -231,6 +262,7 @@ export default function UserManagementPage() {
                           <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                           <TableCell><Skeleton className="h-5 w-36" /></TableCell>
                           <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-12" /></TableCell>
                           <TableCell className="text-right"><Skeleton className="h-8 w-32 rounded-md ml-auto" /></TableCell>
                         </TableRow>
                       ))
@@ -244,9 +276,16 @@ export default function UserManagementPage() {
                             {user.codeGenerationEnabled ? 'Enabled' : 'Disabled'}
                           </Badge>
                         </TableCell>
+                        <TableCell>{user.credits ?? 'N/A'}</TableCell>
                         <TableCell className="text-right space-x-2">
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>Manage</Button>
+                            <Button variant="outline" size="sm" onClick={() => {
+                                setEditingUser(user);
+                                setCreditAmount(user.credits ?? 0);
+                            }}>
+                                <Edit className="mr-2 h-3 w-3" />
+                                Manage
+                            </Button>
                           </DialogTrigger>
 
                           <AlertDialog>
@@ -278,7 +317,7 @@ export default function UserManagementPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                         No users have signed up yet.
                       </TableCell>
                     </TableRow>
@@ -287,27 +326,42 @@ export default function UserManagementPage() {
               </Table>
               <DialogContent>
                   <DialogHeader>
-                      <DialogTitle>Manage Permissions for {editingUser?.email}</DialogTitle>
-                      <DialogDescription>
-                      Enter the secret code to change permissions for this user.
-                      </DialogDescription>
+                      <DialogTitle>Manage User: {editingUser?.name}</DialogTitle>
+                      <DialogDescription>{editingUser?.email}</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="secret-code">Secret Code</Label>
-                          <Input id="secret-code" type="password" value={secretCode} onChange={(e) => setSecretCode(e.target.value)} placeholder="Enter secret code" />
+                      <div className="space-y-3">
+                          <h4 className="font-medium">Permissions</h4>
+                          <div className="space-y-2">
+                            <Label htmlFor="secret-code">Secret Code</Label>
+                            <Input id="secret-code" type="password" value={secretCode} onChange={(e) => setSecretCode(e.target.value)} placeholder="Enter secret code to change status" />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="destructive" onClick={() => handleManagePermission('disable')} disabled={isManagingPermission || !secretCode}>
+                                {isManagingPermission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
+                                Disable
+                            </Button>
+                            <Button onClick={() => handleManagePermission('enable')} disabled={isManagingPermission || !secretCode}>
+                                {isManagingPermission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                                Enable
+                            </Button>
+                          </div>
+                      </div>
+                      <Separator />
+                       <div className="space-y-3">
+                          <h4 className="font-medium">Credits</h4>
+                          <div className="space-y-2">
+                            <Label htmlFor="credits">Set Credit Amount</Label>
+                            <div className="flex gap-2">
+                                <Input id="credits" type="number" value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} placeholder="e.g., 50" className="w-32" />
+                                 <Button onClick={handleSetCredits} disabled={isManagingCredits}>
+                                    {isManagingCredits ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Set Credits
+                                </Button>
+                            </div>
+                          </div>
                       </div>
                   </div>
-                  <DialogFooter className="gap-2">
-                      <Button variant="destructive" onClick={() => handleManagePermission('disable')} disabled={isManaging}>
-                          {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
-                          Disable
-                      </Button>
-                      <Button onClick={() => handleManagePermission('enable')} disabled={isManaging}>
-                          {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                          Enable
-                      </Button>
-                  </DialogFooter>
               </DialogContent>
             </Dialog>
           </CardContent>

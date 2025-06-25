@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { getUsers as getUsersFromFile, deleteUserByEmail, updateUserCodeGenerationByEmail } from "@/lib/auth";
+import { getUsers as getUsersFromFile, deleteUserByEmail, updateUserCodeGenerationByEmail, updateUserCreditsByEmail } from "@/lib/auth";
 import type { UpdateAdminSchema } from "@/lib/auth-shared";
 import type { User } from '@/lib/auth-shared';
 
@@ -30,9 +30,6 @@ export async function deleteUserAction(email: string) {
     }
 }
 
-const ENABLE_CODE = "809a7620a8ff24e235e1d3e8e1f0e470c6551b3a532d398f6d8c83a5e8b0b5c1";
-const DISABLE_CODE = "2f2c8d2345e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2";
-
 const ManagePermissionSchema = z.object({
     email: z.string().email(),
     action: z.enum(['enable', 'disable']),
@@ -47,16 +44,20 @@ export async function manageUserPermissionAction(data: unknown) {
     }
     
     const { email, action, secretCode } = result.data;
-
-    if (action === 'enable' && secretCode !== ENABLE_CODE) {
-        return { success: false, error: "Invalid secret code for enabling." };
-    }
-
-    if (action === 'disable' && secretCode !== DISABLE_CODE) {
-        return { success: false, error: "Invalid secret code for disabling." };
-    }
-
+    const codesFilePath = path.join(dataDir, 'secret_codes.json');
+    
     try {
+        const codesData = await fs.readFile(codesFilePath, 'utf-8');
+        const codes = JSON.parse(codesData);
+
+        if (action === 'enable' && secretCode !== codes.enableCode) {
+            return { success: false, error: "Invalid secret code for enabling." };
+        }
+
+        if (action === 'disable' && secretCode !== codes.disableCode) {
+            return { success: false, error: "Invalid secret code for disabling." };
+        }
+    
         await updateUserCodeGenerationByEmail(email, action === 'enable');
         const message = `User ${email} code generation has been ${action}d.`;
         return { success: true, message };
@@ -64,6 +65,20 @@ export async function manageUserPermissionAction(data: unknown) {
         return { success: false, error: error.message };
     }
 }
+
+export async function updateUserCreditsAction(data: { email: string; credits: number }) {
+    try {
+        const parsedCredits = parseInt(String(data.credits), 10);
+        if (isNaN(parsedCredits) || parsedCredits < 0) {
+            return { success: false, error: "Invalid credit amount." };
+        }
+        await updateUserCreditsByEmail(data.email, parsedCredits);
+        return { success: true, message: `Credits for ${data.email} set to ${parsedCredits}.` };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
 
 // --- Team Management Actions ---
 const teamFilePath = path.join(dataDir, 'team.json');

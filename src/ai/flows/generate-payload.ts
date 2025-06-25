@@ -1,3 +1,4 @@
+
 // src/ai/flows/generate-payload.ts
 'use server';
 /**
@@ -15,6 +16,7 @@ const GeneratePayloadInputSchema = z.object({
   language: z.string().describe('The programming language for the payload.'),
   payloadType: z.string().describe('The type of payload to generate (e.g., reverse shell, keylogger).'),
   specifications: z.string().describe('Detailed specifications for the malware, including functionality and target environment.'),
+  userEmail: z.string().email().describe("The email of the user generating the payload."),
 });
 export type GeneratePayloadInput = z.infer<typeof GeneratePayloadInputSchema>;
 

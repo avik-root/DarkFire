@@ -12,6 +12,7 @@ export const UserSchema = z.object({
   role: z.enum(['admin', 'user']),
   codeGenerationEnabled: z.boolean().optional(),
   formSubmitted: z.boolean().optional(),
+  credits: z.number().optional(),
 });
 
 export const CreateUserSchema = z.object({

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -5,13 +6,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { handleGeneratePayload } from "@/app/actions";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, Download, HardHat, Loader2, FileCode } from "lucide-react";
+import { Bot, Download, HardHat, Loader2, FileCode, Gem } from "lucide-react";
 
 const formSchema = z.object({
   language: z.string({ required_error: "Please select a language." }).min(1, "Please select a language."),
@@ -28,6 +30,7 @@ export default function PayloadGenerator() {
   const [generatedCode, setGeneratedCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user, updateUser } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -37,9 +40,14 @@ export default function PayloadGenerator() {
   });
 
   const onSubmit = async (data: FormValues) => {
+    if (!user?.email) {
+      toast({ variant: "destructive", title: "Authentication Error", description: "Could not find user email." });
+      return;
+    }
+
     setIsLoading(true);
     setGeneratedCode("");
-    const result = await handleGeneratePayload(data);
+    const result = await handleGeneratePayload({ ...data, userEmail: user.email });
     setIsLoading(false);
 
     if ("error" in result) {
@@ -50,6 +58,7 @@ export default function PayloadGenerator() {
       });
     } else {
       setGeneratedCode(result.code);
+      updateUser(result.user);
       toast({
         title: "Success",
         description: "Payload generated successfully!",
@@ -80,13 +89,23 @@ export default function PayloadGenerator() {
     URL.revokeObjectURL(url);
   };
 
+  const hasCredits = user?.role === 'admin' || (user?.credits !== undefined && user.credits > 0);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <HardHat className="w-8 h-8 text-primary" />
-            <CardTitle className="text-3xl font-headline tracking-wider">Payload Forge</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <HardHat className="w-8 h-8 text-primary" />
+              <CardTitle className="text-3xl font-headline tracking-wider">Payload Forge</CardTitle>
+            </div>
+            {user && user.role !== 'admin' && (
+               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-secondary px-3 py-1.5 rounded-full">
+                <Gem className="w-4 h-4 text-primary" />
+                <span>{user.credits ?? 0} Credits</span>
+               </div>
+            )}
           </div>
           <CardDescription>Specify your requirements to generate custom malware code.</CardDescription>
         </CardHeader>
@@ -154,13 +173,13 @@ export default function PayloadGenerator() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading} className="w-full bg-accent hover:bg-accent/90">
+              <Button type="submit" disabled={isLoading || !hasCredits} className="w-full bg-accent hover:bg-accent/90">
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Bot className="mr-2 h-4 w-4" />
                 )}
-                Generate Code
+                {hasCredits ? 'Generate Code' : 'Insufficient Credits'}
               </Button>
             </form>
           </Form>

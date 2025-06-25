@@ -66,6 +66,7 @@ export async function addUser(data: CreateUserInput): Promise<PublicUser> {
     role,
     codeGenerationEnabled: role === 'admin',
     formSubmitted: role === 'admin',
+    credits: role === 'admin' ? 9999 : 2,
   };
   
   if (isFirstUser) {
@@ -146,4 +147,32 @@ export async function updateUserCodeGenerationByEmail(email: string, enabled: bo
   } else {
     throw new Error('User not found.');
   }
+}
+
+export async function updateUserCreditsByEmail(email: string, credits: number): Promise<void> {
+    const users = await readUserFile(regularUsersFilePath);
+    const userIndex = users.findIndex(u => u.email === email);
+    if (userIndex > -1) {
+        users[userIndex].credits = credits;
+        await writeUserFile(regularUsersFilePath, users);
+    } else {
+        throw new Error('User not found.');
+    }
+}
+
+export async function decrementUserCredit(email: string): Promise<User | null> {
+    // Only applies to regular users
+    const users = await readUserFile(regularUsersFilePath);
+    const userIndex = users.findIndex(u => u.email === email);
+    if (userIndex > -1) {
+        const user = users[userIndex];
+        if (user.credits !== undefined && user.credits > 0) {
+            user.credits -= 1;
+            users[userIndex] = user;
+            await writeUserFile(regularUsersFilePath, users);
+            return user;
+        }
+        return null; // Not enough credits
+    }
+    return null; // User not found
 }
