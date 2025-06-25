@@ -63,9 +63,9 @@ export default function PurchasePage() {
                 <div className="inline-block bg-primary/10 p-4 rounded-full">
                     <Heart className="w-12 h-12 text-primary" />
                 </div>
-                <h1 className="text-5xl font-headline text-primary tracking-tighter">Support a Pawsome Cause</h1>
+                <h1 className="text-5xl font-headline text-primary tracking-tighter">Be Their Hero: Support a Pawsome Cause</h1>
                 <p className="max-w-2xl mx-auto text-lg text-foreground/80">
-                    100% of your contribution goes directly to street animal welfare. As a thank you, we'll top up your account with credits.
+                    Your generosity fuels our mission to help street animals in need. Every contribution makes a world of difference, and as a heartfelt thank you, we'll top up your account with credits to power your projects.
                 </p>
             </div>
             
