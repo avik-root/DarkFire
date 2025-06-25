@@ -17,7 +17,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { ShieldAlert, LayoutDashboard, BarChart3, Users, Settings } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function AdminLayout({
   children,
@@ -83,11 +82,7 @@ export default function AdminLayout({
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-3 p-2">
-             <Avatar>
-                <AvatarImage src={`https://i.pravatar.cc/150?u=${user?.email}`} />
-                <AvatarFallback>{user?.name?.[0].toUpperCase()}</AvatarFallback>
-             </Avatar>
+          <div className="p-2">
              <div className="flex flex-col overflow-hidden">
                 <span className="text-sm font-semibold truncate">{user?.name}</span>
                 <span className="text-xs text-muted-foreground capitalize">{user?.role}</span>
