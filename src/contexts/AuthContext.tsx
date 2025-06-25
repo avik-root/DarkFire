@@ -16,6 +16,7 @@ interface AuthContextType {
   updateUser: (data: PublicUser) => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
     if (userData.role === 'admin') {
         router.push('/admin/dashboard');
+    } else if (!userData.formSubmitted) {
+        router.push('/request-access');
     } else {
         router.push('/playground');
     }
@@ -60,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = (userData: PublicUser) => {
     Cookies.set(USER_COOKIE, JSON.stringify(userData), { expires: 7 });
     setUser(userData);
-    router.push('/playground');
+    router.push('/request-access');
   };
 
   const updateUser = (userData: PublicUser) => {
@@ -75,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signup,
     updateUser, 
     isAuthenticated: !loading && !!user, 
-    isAdmin: !loading && isAdmin 
+    isAdmin: !loading && isAdmin,
+    loading
   };
 
   return (

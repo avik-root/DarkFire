@@ -10,6 +10,8 @@ export const UserSchema = z.object({
   email: z.string().email(),
   password: z.string(), // This will be the hashed password
   role: z.enum(['admin', 'user']),
+  codeGenerationEnabled: z.boolean().optional(),
+  formSubmitted: z.boolean().optional(),
 });
 
 export const CreateUserSchema = z.object({

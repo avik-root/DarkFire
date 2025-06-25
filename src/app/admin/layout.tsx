@@ -16,7 +16,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ShieldAlert, LayoutDashboard, BarChart3, Users, Settings } from "lucide-react";
+import { ShieldAlert, LayoutDashboard, BarChart3, Users, Settings, FileCheck2 } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -60,6 +60,14 @@ export default function AdminLayout({
                 <Link href="/admin/analytics">
                   <BarChart3 />
                   Analytics
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Access Requests" isActive={pathname === '/admin/requests'}>
+                <Link href="/admin/requests">
+                  <FileCheck2 />
+                  Access Requests
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

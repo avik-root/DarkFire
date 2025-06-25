@@ -64,6 +64,8 @@ export async function addUser(data: CreateUserInput): Promise<PublicUser> {
     email: data.email,
     password: hashedPassword,
     role,
+    codeGenerationEnabled: role === 'admin',
+    formSubmitted: role === 'admin',
   };
   
   if (isFirstUser) {
@@ -110,4 +112,27 @@ export async function deleteUserByEmail(email: string): Promise<void> {
   }
 
   await writeUserFile(regularUsersFilePath, users);
+}
+
+export async function updateUserFormStatus(email: string): Promise<User> {
+    const users = await readUserFile(regularUsersFilePath);
+    const userIndex = users.findIndex(u => u.email === email);
+    if (userIndex === -1) {
+        throw new Error('User not found');
+    }
+    users[userIndex].formSubmitted = true;
+    await writeUserFile(regularUsersFilePath, users);
+    return users[userIndex];
+}
+
+export async function approveUserByEmail(email: string): Promise<void> {
+    const users = await readUserFile(regularUsersFilePath);
+    const userIndex = users.findIndex(u => u.email === email);
+    if (userIndex > -1) {
+        users[userIndex].codeGenerationEnabled = true;
+        await writeUserFile(regularUsersFilePath, users);
+    } else {
+        console.warn(`Attempted to approve non-existent user: ${email}`);
+        throw new Error('User not found.');
+    }
 }

@@ -1,12 +1,68 @@
 
 "use client";
 
+import { useAuth } from "@/contexts/AuthContext";
 import PayloadGenerator from "@/components/payload-generator";
 import ProfileSettings from "@/components/profile-settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { HardHat, UserCog } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { HardHat, UserCog, ShieldAlert } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PlaygroundPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user && !user.formSubmitted) {
+      router.push('/request-access');
+    }
+  }, [user, loading, router]);
+  
+  if (loading || !user) {
+    return (
+       <div className="space-y-8">
+        <div className="text-center">
+            <Skeleton className="h-12 w-1/2 mx-auto mb-2"/>
+            <Skeleton className="h-6 w-3/4 mx-auto"/>
+        </div>
+        <Skeleton className="w-[400px] h-10 mx-auto" />
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-8 w-1/4 mb-2"/>
+                <Skeleton className="h-5 w-1/2"/>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!user.codeGenerationEnabled) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Card className="w-full max-w-lg text-center p-6">
+          <CardHeader>
+            <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+              <ShieldAlert className="w-12 h-12 text-primary" />
+            </div>
+            <CardTitle className="text-3xl font-headline mt-4">Access Pending</CardTitle>
+            <CardDescription className="text-lg text-muted-foreground">
+              Your request for access has been submitted. An administrator will review it shortly. Please check back later.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 opacity-0 animate-fade-in-up">
       <div className="text-center">
