@@ -242,10 +242,20 @@ export default function AdminSettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Logo Management</CardTitle>
-            <CardDescription>Upload a PNG or JPG file to be used as the site logo in the header. Recommended size: 128x128px.</CardDescription>
+            <CardDescription>Upload a PNG or JPG file to be used as the site logo. Maximum size: 2MB.</CardDescription>
           </CardHeader>
           <CardContent>
             <form action={async (formData) => {
+              const file = formData.get('logo') as File;
+              if (file.size > 2 * 1024 * 1024) {
+                toast({
+                  variant: "destructive",
+                  title: "Upload Error",
+                  description: "File size cannot exceed 2MB.",
+                });
+                return;
+              }
+              
               setIsUploading(true);
               const result = await uploadLogoAction(formData);
               if (result.success) {

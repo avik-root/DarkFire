@@ -394,6 +394,10 @@ export async function uploadLogoAction(formData: FormData): Promise<{ success: b
     return { success: false, error: 'No file was selected for upload.' };
   }
 
+  if (file.size > 2 * 1024 * 1024) {
+    return { success: false, error: 'File is too large. Maximum size is 2MB.' };
+  }
+
   const allowedTypes = ['image/png', 'image/jpeg'];
   if (!allowedTypes.includes(file.type)) {
     return { success: false, error: 'Only .png and .jpg files are allowed.' };
