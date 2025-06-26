@@ -213,12 +213,19 @@ type AppSettings = {
 };
 
 async function readSettingsData(): Promise<AppSettings> {
+    const defaultSettings = { maintenanceMode: false, allowRegistrations: true, apiKey: "" };
     try {
         const data = await fs.readFile(settingsFilePath, 'utf-8');
-        return JSON.parse(data);
-    } catch (error) {
-        // Fallback to default settings if file doesn't exist or is invalid
-        return { maintenanceMode: false, allowRegistrations: true, apiKey: "" };
+        if (!data.trim()) {
+            return defaultSettings;
+        }
+        return { ...defaultSettings, ...JSON.parse(data) };
+    } catch (error: any) {
+        if (error.code === 'ENOENT') {
+            return defaultSettings;
+        }
+        console.error("Error reading or parsing settings.json:", error);
+        return defaultSettings;
     }
 }
 

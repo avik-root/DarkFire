@@ -92,12 +92,12 @@ export default function AdminSettingsPage() {
         const fetchSettings = async () => {
             setIsFetchingSettings(true);
             const result = await getSettingsAction();
-            if (result.success && result.settings) {
+            if (result && result.success && result.settings) {
                 setMaintenanceMode(result.settings.maintenanceMode);
                 setAllowRegistrations(result.settings.allowRegistrations);
-                setApiKey(result.settings.apiKey);
+                setApiKey(result.settings.apiKey || "");
             } else {
-                toast({ variant: "destructive", title: "Error", description: "Could not load application settings." });
+                toast({ variant: "destructive", title: "Error", description: result?.error || "Could not load application settings." });
             }
             setIsFetchingSettings(false);
         };
