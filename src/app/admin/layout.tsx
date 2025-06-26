@@ -16,14 +16,24 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ShieldAlert, LayoutDashboard, BarChart3, Users, Settings, FileCheck2, Key } from "lucide-react";
+import { 
+  ShieldAlert, 
+  LayoutDashboard, 
+  BarChart3, 
+  Users, 
+  Settings, 
+  FileCheck2, 
+  Key,
+  LogOut
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
 
   return (
@@ -107,6 +117,15 @@ export default function AdminLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="pt-14 md:pt-0">
+         <header className="hidden md:flex h-14 items-center justify-end gap-4 border-b bg-background px-6">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{user?.name}</span>
+              <Button onClick={logout} variant="outline" size="sm">
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+         </header>
          <div className="p-4 md:p-6">
             {children}
          </div>
