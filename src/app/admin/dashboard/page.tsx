@@ -75,7 +75,7 @@ export default function AdminDashboard() {
   }, [toast]);
   
   const totalAttempts = analytics ? analytics.successfulGenerations + analytics.failedGenerations : 0;
-  const successRate = totalAttempts > 0 ? (analytics.successfulGenerations / totalAttempts) * 100 : 0;
+  const successRate = totalAttempts > 0 && analytics ? (analytics.successfulGenerations / totalAttempts) * 100 : 0;
   const currentMonth = new Date().toLocaleString('default', { month: 'short' });
   const thisMonthGenerations = analytics?.generationHistory.find(h => h.month === currentMonth)?.generated || 0;
 
@@ -87,7 +87,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="space-y-8 opacity-0 animate-fade-in-up">
+    <div className="space-y-8">
       <h1 className="text-4xl font-headline tracking-tighter">Admin Dashboard</h1>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

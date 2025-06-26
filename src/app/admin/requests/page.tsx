@@ -71,7 +71,7 @@ export default function AccessRequestsPage() {
     }
 
     return (
-        <div className="space-y-8 opacity-0 animate-fade-in-up">
+        <div className="space-y-8">
             <h1 className="text-4xl font-headline tracking-tighter">Access Requests</h1>
             <Card>
                 <CardHeader>

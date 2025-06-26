@@ -126,7 +126,7 @@ export default function AdminLayout({
               </Button>
             </div>
          </header>
-         <div className="p-4 md:p-6">
+         <div className="p-4 md:p-6 opacity-0 animate-fade-in-up">
             {children}
          </div>
       </SidebarInset>

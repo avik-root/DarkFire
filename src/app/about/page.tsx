@@ -46,7 +46,7 @@ export default async function AboutPage({}: {}) {
   const teamMembers = await getTeamMembers();
 
   return (
-    <div className="space-y-16 opacity-0 animate-fade-in-up">
+    <div className="space-y-16">
       <section className="text-center">
         <h1 className="text-5xl md:text-7xl font-headline tracking-tighter text-primary">About DarkFire <span className="text-3xl md:text-5xl text-foreground/80">by MintFire</span></h1>
         <p className="mt-4 max-w-3xl mx-auto text-lg text-foreground/80">

@@ -62,7 +62,7 @@ export default async function RootLayout({
       <body className="font-body antialiased min-h-screen flex flex-col bg-background">
         <AuthProvider>
           {!isAdminPage && <Header logoUrl={logoUrl} />}
-          <div className={cn("flex-grow", !isAdminPage && "container mx-auto px-4 py-8")}>
+          <div className={cn("flex-grow opacity-0 animate-fade-in-up", !isAdminPage && "container mx-auto px-4 py-8")}>
             {children}
           </div>
           {!isAdminPage && <Footer adminLoginUrl={adminLoginUrl} />}

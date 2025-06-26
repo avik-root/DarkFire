@@ -57,7 +57,7 @@ export default function PurchasePage() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto py-12 space-y-12 opacity-0 animate-fade-in-up">
+        <div className="max-w-4xl mx-auto py-12 space-y-12">
              <div className="text-center space-y-4">
                 <div className="inline-block bg-primary/10 p-4 rounded-full">
                     <Heart className="w-12 h-12 text-primary" />

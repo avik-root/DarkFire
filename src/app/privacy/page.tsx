@@ -1,6 +1,6 @@
 export default function PrivacyPage({}: {}) {
   return (
-    <div className="space-y-8 opacity-0 animate-fade-in-up">
+    <div className="space-y-8">
       <h1 className="text-4xl md:text-5xl font-headline tracking-tighter">Privacy <span className="text-primary">Policy</span></h1>
       <div className="max-w-4xl mx-auto text-foreground/80 space-y-6">
         <p className="text-sm text-muted-foreground">Last updated: June 24, 2024</p>

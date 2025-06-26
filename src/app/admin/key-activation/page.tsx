@@ -49,7 +49,7 @@ export default function KeyActivationPage() {
     };
 
     return (
-        <div className="space-y-8 opacity-0 animate-fade-in-up">
+        <div className="space-y-8">
             <h1 className="text-4xl font-headline tracking-tighter">Key Activation Requests</h1>
             <Card>
                 <CardHeader>

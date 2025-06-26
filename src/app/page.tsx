@@ -66,7 +66,7 @@ export default function Home() {
       <section 
         className="text-center"
       >
-        <div className="relative z-10 opacity-0 animate-fade-in-up">
+        <div className="relative z-10">
           <h1 className="text-6xl md:text-8xl font-headline tracking-tighter text-primary">
             Welcome to DarkFire
           </h1>
@@ -87,7 +87,7 @@ export default function Home() {
         </div>
       </section>
       
-      <section id="features" className="space-y-12 opacity-0 animate-fade-in-up [animation-delay:200ms]">
+      <section id="features" className="space-y-12">
         <div className="text-center">
           <h2 className="text-4xl md:text-5xl font-headline tracking-tighter">
             <span className="text-primary">Powerful</span> Features
@@ -113,7 +113,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="how-it-works" className="space-y-12 opacity-0 animate-fade-in-up [animation-delay:400ms]">
+      <section id="how-it-works" className="space-y-12">
         <div className="text-center">
           <h2 className="text-4xl md:text-5xl font-headline tracking-tighter">
             How It <span className="text-primary">Works</span>

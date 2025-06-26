@@ -64,7 +64,7 @@ export default function PlaygroundPage() {
   }
 
   return (
-    <div className="space-y-8 opacity-0 animate-fade-in-up">
+    <div className="space-y-8">
       <div className="text-center">
           <h1 className="text-5xl md:text-6xl font-headline tracking-tighter">
             Playground for <span className="text-primary">No Mercy</span>

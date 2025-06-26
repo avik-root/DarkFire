@@ -85,7 +85,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-8 opacity-0 animate-fade-in-up">
+      <div className="space-y-8">
         <h1 className="text-4xl font-headline tracking-tighter">Application Analytics</h1>
         <p className="text-muted-foreground -mt-4">
           Detailed insights into user activity and payload generation trends.
@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-8 opacity-0 animate-fade-in-up">
+    <div className="space-y-8">
       <h1 className="text-4xl font-headline tracking-tighter">Application Analytics</h1>
       <p className="text-muted-foreground -mt-4">
         Detailed insights into user activity and payload generation trends.

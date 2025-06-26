@@ -30,6 +30,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -170,7 +171,8 @@ export default function UserManagementPage() {
 
     if (result.success && result.user) {
         toast({ title: "Success", description: result.message });
-        fetchUsers();
+        const updatedUsers = users.map(u => u.id === result.user!.id ? result.user! : u);
+        setUsers(updatedUsers);
         setEditingUser(result.user);
         setNewActivationKey("");
         setNewCreditAmount("");
@@ -185,7 +187,8 @@ export default function UserManagementPage() {
     const result = await deleteActivationKeyAction({ email: editingUser.email, key });
      if (result.success && result.user) {
         toast({ title: "Success", description: result.message });
-        fetchUsers();
+        const updatedUsers = users.map(u => u.id === result.user!.id ? result.user! : u);
+        setUsers(updatedUsers);
         setEditingUser(result.user);
     } else {
         toast({ variant: "destructive", title: "Error", description: result.error });
@@ -248,7 +251,7 @@ export default function UserManagementPage() {
 
 
   return (
-    <div className="space-y-8 opacity-0 animate-fade-in-up">
+    <div className="space-y-8">
        <h1 className="text-4xl font-headline tracking-tighter">User & Team Management</h1>
        <div className="grid gap-6">
         <Card>
@@ -262,6 +265,7 @@ export default function UserManagementPage() {
                 <TableRow>
                   <TableHead>User Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Credits</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right w-[180px]">Actions</TableHead>
                 </TableRow>
@@ -272,6 +276,7 @@ export default function UserManagementPage() {
                       <TableRow key={i}>
                         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-36" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-8 w-32 rounded-md ml-auto" /></TableCell>
                       </TableRow>
@@ -281,6 +286,7 @@ export default function UserManagementPage() {
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.credits ?? 0}</TableCell>
                       <TableCell>
                          <Badge variant={user.codeGenerationEnabled ? 'default' : 'secondary'}>
                           {user.codeGenerationEnabled ? 'Enabled' : 'Disabled'}
@@ -322,7 +328,7 @@ export default function UserManagementPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                       No users have signed up yet.
                     </TableCell>
                   </TableRow>
@@ -332,27 +338,71 @@ export default function UserManagementPage() {
             {editingUser && (
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Manage Permissions for {editingUser?.email}</DialogTitle>
+                        <DialogTitle>Manage {editingUser?.email}</DialogTitle>
                         <DialogDescription>
-                        Enter the secret code to change permissions for this user.
+                        Enable/disable payload generation or manage activation keys for this user.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="secret-code">Secret Code</Label>
-                            <Input id="secret-code" type="password" value={secretCode} onChange={(e) => setSecretCode(e.target.value)} placeholder="Enter secret code" />
+                    <div className="space-y-6 py-4">
+                        <div className="space-y-4">
+                            <h4 className="font-semibold">Generation Permissions</h4>
+                            <div className="space-y-2">
+                                <Label htmlFor="secret-code">Admin Secret Code</Label>
+                                <Input id="secret-code" type="password" value={secretCode} onChange={(e) => setSecretCode(e.target.value)} placeholder="Enter secret code to change status" />
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => handleManagePermission('enable')} disabled={isManagingPermission || !secretCode}>
+                                    {isManagingPermission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                                    Enable
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => handleManagePermission('disable')} disabled={isManagingPermission || !secretCode}>
+                                    {isManagingPermission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
+                                    Disable
+                                </Button>
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-4">
+                            <h4 className="font-semibold">Manage Activation Keys</h4>
+                             <div className="flex items-end gap-2">
+                               <div className="grid w-full max-w-sm items-center gap-1.5">
+                                 <Label htmlFor="key-input">New Activation Key</Label>
+                                 <Input id="key-input" placeholder="Enter new key" value={newActivationKey} onChange={e => setNewActivationKey(e.target.value)} />
+                               </div>
+                                <div className="grid w-24 items-center gap-1.5">
+                                 <Label htmlFor="credits-input">Credits</Label>
+                                 <Input id="credits-input" type="number" placeholder="Amt" value={newCreditAmount} onChange={e => setNewCreditAmount(e.target.value)} />
+                               </div>
+                               <Button onClick={handleAddKey} disabled={isAddingKey || !newActivationKey || !newCreditAmount}>
+                                 {isAddingKey ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                 Add
+                               </Button>
+                             </div>
+                             <div className="space-y-2">
+                                <Label>Existing Keys ({editingUser.activationKeys?.length || 0})</Label>
+                                <div className="max-h-32 overflow-y-auto space-y-2 rounded-md border p-2">
+                                    {editingUser.activationKeys && editingUser.activationKeys.length > 0 ? (
+                                        editingUser.activationKeys.map(k => (
+                                          <div key={k.key} className="flex items-center justify-between text-sm">
+                                            <div className="flex items-center gap-2 font-mono text-xs">
+                                              <Key className="w-3 h-3 text-muted-foreground" />
+                                              <span className="truncate">{k.key}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <Badge variant="secondary">{k.credits} credits</Badge>
+                                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteKey(k.key)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                                            </div>
+                                          </div>
+                                        ))
+                                    ) : (
+                                       <p className="text-sm text-muted-foreground text-center py-4">No keys found.</p>
+                                    )}
+                                </div>
+                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="gap-2">
-                        <Button variant="destructive" onClick={() => handleManagePermission('disable')} disabled={isManaging}>
-                            {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldOff className="mr-2 h-4 w-4" />}
-                            Disable
-                        </Button>
-                        <Button onClick={() => handleManagePermission('enable')} disabled={isManaging}>
-                            {isManaging ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                            Enable
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             )}
           </CardContent>
@@ -392,7 +442,7 @@ export default function UserManagementPage() {
                                 if (!isOpen) { setEditingMember(null); setSelectedFile(null); }
                               }}>
                                 <DialogTrigger asChild>
-                                  <Button variant="outline" onClick={() => setEditingMember(member)}>Edit</Button>
+                                  <Button variant="outline" onClick={() => setEditingMember(member)}><Edit className="mr-2"/>Edit</Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-2xl">
                                   <DialogHeader>
