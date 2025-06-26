@@ -40,6 +40,8 @@ export default async function RootLayout({
     const logoInfo = JSON.parse(logoInfoData);
     if (logoInfo.url && logoInfo.timestamp) {
       logoUrl = `${logoInfo.url}?v=${logoInfo.timestamp}`;
+    } else {
+      logoUrl = logoInfo.url;
     }
   } catch (error) {
     // Logo info file doesn't exist, so no logo will be displayed.
@@ -47,7 +49,7 @@ export default async function RootLayout({
   }
 
   const headersList = headers();
-  const pathname = headersList.get("next-url") || "";
+  const pathname = headersList.get("x-next-url") || "";
   const isAdminPage = pathname.startsWith('/admin');
 
   return (

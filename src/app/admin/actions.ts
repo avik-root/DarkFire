@@ -473,6 +473,7 @@ export async function uploadLogoAction(formData: FormData): Promise<{ success: b
 
     const logoInfo = {
       url: `/${filename}`,
+      timestamp: Date.now(),
     };
     await fs.writeFile(logoInfoPath, JSON.stringify(logoInfo));
 
