@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +49,13 @@ const TwoFactorFormSchema = z.object({
 
 type TwoFactorFormValues = z.infer<typeof TwoFactorFormSchema>;
 
+const GeneralSettingsSchema = z.object({
+  maintenanceMode: z.boolean(),
+  allowRegistrations: z.boolean(),
+  apiKey: z.string().optional(),
+});
+type GeneralSettingsFormValues = z.infer<typeof GeneralSettingsSchema>;
+
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
@@ -57,21 +63,13 @@ export default function AdminSettingsPage() {
     
     // Loading states
     const [isFetchingSettings, setIsFetchingSettings] = useState(true);
-    const [isSavingSettings, setIsSavingSettings] = useState(false);
-    const [isSaving2FA, setIsSaving2FA] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
-    const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
 
     // Password visibility states
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-    // General Settings state
-    const [maintenanceMode, setMaintenanceMode] = useState(false);
-    const [allowRegistrations, setAllowRegistrations] = useState(true);
-    const [apiKey, setApiKey] = useState("");
 
     const profileForm = useForm<AdminProfileFormValues>({
         resolver: zodResolver(UpdateAdminSchema),
@@ -81,6 +79,11 @@ export default function AdminSettingsPage() {
     const twoFactorForm = useForm<TwoFactorFormValues>({
         resolver: zodResolver(TwoFactorFormSchema),
         defaultValues: { pin: "", enabled: user?.twoFactorEnabled ?? false, password: "" },
+    });
+    
+    const generalSettingsForm = useForm<GeneralSettingsFormValues>({
+        resolver: zodResolver(GeneralSettingsSchema),
+        defaultValues: { maintenanceMode: false, allowRegistrations: true, apiKey: "" },
     });
 
     const passwordForStrengthMeter = profileForm.watch("password");
@@ -93,9 +96,7 @@ export default function AdminSettingsPage() {
             setIsFetchingSettings(true);
             const result = await getSettingsAction();
             if (result && result.success && result.settings) {
-                setMaintenanceMode(result.settings.maintenanceMode);
-                setAllowRegistrations(result.settings.allowRegistrations);
-                setApiKey(result.settings.apiKey || "");
+                generalSettingsForm.reset(result.settings);
             } else {
                 toast({ variant: "destructive", title: "Error", description: result?.error || "Could not load application settings." });
             }
@@ -120,12 +121,10 @@ export default function AdminSettingsPage() {
             });
         }
 
-    }, [user, profileForm, twoFactorForm, toast]);
+    }, [user, profileForm, twoFactorForm, generalSettingsForm, toast]);
 
     const onAdminProfileSubmit = async (data: AdminProfileFormValues) => {
         if (!user) return;
-        setIsUpdatingProfile(true);
-
         const result = await updateAdminProfileAction(user.id, data);
 
         if (result.success && result.user) {
@@ -135,26 +134,10 @@ export default function AdminSettingsPage() {
         } else {
             toast({ variant: "destructive", title: "Error", description: result.error });
         }
-        setIsUpdatingProfile(false);
     };
 
-    const handleSaveChanges = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSavingSettings(true);
-        const settings = { maintenanceMode, allowRegistrations, apiKey };
-        const result = await saveSettingsAction(settings);
-
-        if (result.success) {
-            toast({ title: "Success", description: result.message });
-        } else {
-            toast({ variant: "destructive", title: "Error", description: result.error });
-        }
-        setIsSavingSettings(false);
-    };
-    
     const onTwoFactorSubmit = async (data: TwoFactorFormValues) => {
         if (!user) return;
-        setIsSaving2FA(true);
         const result = await updateAdminTwoFactorAction({ ...data, email: user.email });
 
         if (result.success && result.user) {
@@ -164,9 +147,17 @@ export default function AdminSettingsPage() {
         } else {
             toast({ variant: "destructive", title: "Error", description: result.error });
         }
-        setIsSaving2FA(false);
     }
 
+    const onGeneralSettingsSubmit = async (data: GeneralSettingsFormValues) => {
+        const result = await saveSettingsAction(data);
+
+        if (result.success) {
+            toast({ title: "Success", description: "Settings saved successfully!" });
+        } else {
+            toast({ variant: "destructive", title: "Error", description: "Failed to save settings." });
+        }
+    };
 
     const handleResetData = async () => {
         setIsResetting(true);
@@ -248,8 +239,8 @@ export default function AdminSettingsPage() {
                             </FormItem>
                         )} />
                         <PasswordStrengthMeter password={passwordForStrengthMeter} />
-                        <Button type="submit" disabled={isUpdatingProfile || profileForm.formState.isSubmitting}>
-                            {(isUpdatingProfile || profileForm.formState.isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                            {profileForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Update Profile
                         </Button>
                     </form>
@@ -303,8 +294,8 @@ export default function AdminSettingsPage() {
                                 </FormItem>
                             )}
                         />
-                        <Button type="submit" disabled={isSaving2FA}>
-                            {isSaving2FA && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={twoFactorForm.formState.isSubmitting}>
+                            {twoFactorForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Security Settings
                         </Button>
                     </form>
@@ -312,36 +303,73 @@ export default function AdminSettingsPage() {
             </CardContent>
         </Card>
       
-        <form onSubmit={handleSaveChanges}>
-            <Card>
-                <CardHeader>
-                    <CardTitle>General Settings</CardTitle>
-                    <CardDescription>Manage application-wide settings.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {isFetchingSettings ? <Loader2 className="animate-spin" /> : (
-                        <>
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="maintenance-mode" className="pr-4">Maintenance Mode</Label>
-                                <Switch id="maintenance-mode" checked={maintenanceMode} onCheckedChange={setMaintenanceMode} />
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="new-user-registration" className="pr-4">Allow New User Registrations</Label>
-                                <Switch id="new-user-registration" checked={allowRegistrations} onCheckedChange={setAllowRegistrations} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="api-key">External API Key</Label>
-                                <Input id="api-key" placeholder="Enter your API key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
-                            </div>
-                        </>
-                    )}
-                    <Button type="submit" disabled={isSavingSettings || isFetchingSettings}>
-                        {isSavingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
-                    </Button>
-                </CardContent>
-            </Card>
-        </form>
+        <Form {...generalSettingsForm}>
+            <form onSubmit={generalSettingsForm.handleSubmit(onGeneralSettingsSubmit)}>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>General Settings</CardTitle>
+                        <CardDescription>Manage application-wide settings.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {isFetchingSettings ? <div className="flex justify-center items-center p-8"><Loader2 className="animate-spin" /></div> : (
+                            <>
+                                <FormField
+                                    control={generalSettingsForm.control}
+                                    name="maintenanceMode"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                              <FormLabel>Maintenance Mode</FormLabel>
+                                            </div>
+                                            <FormControl>
+                                              <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                              />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={generalSettingsForm.control}
+                                    name="allowRegistrations"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                              <FormLabel>Allow New User Registrations</FormLabel>
+                                            </div>
+                                            <FormControl>
+                                              <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                              />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={generalSettingsForm.control}
+                                    name="apiKey"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>External API Key</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Enter your API key" {...field} value={field.value ?? ""} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" disabled={generalSettingsForm.formState.isSubmitting || isFetchingSettings}>
+                                    {generalSettingsForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save Changes
+                                </Button>
+                            </>
+                        )}
+                    </CardContent>
+                </Card>
+            </form>
+        </Form>
 
         <Card>
           <CardHeader>

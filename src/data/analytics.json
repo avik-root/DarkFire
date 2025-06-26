@@ -1,6 +1,6 @@
 {
-  "payloadsGenerated": 2,
-  "successfulGenerations": 2,
+  "payloadsGenerated": 3,
+  "successfulGenerations": 3,
   "failedGenerations": 0,
   "generationHistory": [
     {
@@ -25,7 +25,7 @@
     },
     {
       "month": "Jun",
-      "generated": 2
+      "generated": 3
     },
     {
       "month": "Jul",
@@ -53,9 +53,11 @@
     }
   ],
   "languageCounts": {
-    "PowerShell": 2
+    "PowerShell": 2,
+    "JavaScript": 1
   },
   "payloadTypeCounts": {
-    "Reverse Shell": 2
+    "Reverse Shell": 2,
+    "File Exfiltrator": 1
   }
 }

@@ -1,5 +1,11 @@
 [
   {
+    "timestamp": "2025-06-26T15:10:01.931Z",
+    "status": "success",
+    "language": "JavaScript",
+    "payloadType": "File Exfiltrator"
+  },
+  {
     "timestamp": "2025-06-25T20:31:50.494Z",
     "status": "success",
     "language": "PowerShell",
