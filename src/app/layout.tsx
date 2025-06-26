@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
@@ -32,6 +33,19 @@ export default async function RootLayout({
     // If file doesn't exist, is empty, or has invalid JSON, default to signup.
   }
 
+  let logoUrl: string | null = null;
+  try {
+    const logoInfoPath = path.join(process.cwd(), 'public', 'logo-info.json');
+    const logoInfoData = await fs.readFile(logoInfoPath, 'utf-8');
+    const logoInfo = JSON.parse(logoInfoData);
+    if (logoInfo.url && logoInfo.timestamp) {
+      logoUrl = `${logoInfo.url}?v=${logoInfo.timestamp}`;
+    }
+  } catch (error) {
+    // Logo info file doesn't exist, so no logo will be displayed.
+    logoUrl = null;
+  }
+
   const headersList = headers();
   const pathname = headersList.get("next-url") || "";
   const isAdminPage = pathname.startsWith('/admin');
@@ -45,7 +59,7 @@ export default async function RootLayout({
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col bg-background">
         <AuthProvider>
-          {!isAdminPage && <Header />}
+          {!isAdminPage && <Header logoUrl={logoUrl} />}
           <div className={cn("flex-grow", !isAdminPage && "container mx-auto px-4 py-8")}>
             {children}
           </div>

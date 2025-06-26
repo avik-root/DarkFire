@@ -7,9 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Loader2, ShieldCheck, ShieldOff, Edit, Save, Key } from "lucide-react";
+import { Trash2, Loader2, ShieldCheck, ShieldOff, Edit, Key, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getUsersAction, deleteUserAction, getTeamMembersAction, updateTeamMemberAction, manageUserPermissionAction, setActivationKeyAction } from "@/app/admin/actions";
+import { getUsersAction, deleteUserAction, getTeamMembersAction, updateTeamMemberAction, manageUserPermissionAction, addActivationKeyAction, deleteActivationKeyAction } from "@/app/admin/actions";
 import type { PublicUser } from "@/lib/auth-shared";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -28,10 +28,8 @@ import {
   DialogTrigger,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -74,9 +72,10 @@ export default function UserManagementPage() {
   const [editingUser, setEditingUser] = useState<PublicUser | null>(null);
   const [secretCode, setSecretCode] = useState('');
   const [isManagingPermission, setIsManagingPermission] = useState(false);
-  const [activationKey, setActivationKey] = useState("");
-  const [creditAmount, setCreditAmount] = useState<number | string>("");
-  const [isManagingKey, setIsManagingKey] = useState(false);
+  
+  const [newActivationKey, setNewActivationKey] = useState("");
+  const [newCreditAmount, setNewCreditAmount] = useState<number | string>("");
+  const [isAddingKey, setIsAddingKey] = useState(false);
 
   // Team Management state
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
@@ -114,7 +113,7 @@ export default function UserManagementPage() {
   useEffect(() => {
     fetchUsers();
     fetchTeam();
-  }, [toast]);
+  }, []);
   
   useEffect(() => {
     if (editingMember) {
@@ -151,6 +150,7 @@ export default function UserManagementPage() {
     if (result.success) {
       toast({ title: "Success", description: result.message });
       fetchUsers();
+      setEditingUser(prev => prev ? {...prev, codeGenerationEnabled: action === 'enable'} : null);
       setSecretCode('');
     } else {
       toast({ variant: "destructive", title: "Error", description: result.error });
@@ -158,25 +158,38 @@ export default function UserManagementPage() {
     setIsManagingPermission(false);
   }
 
-  const handleSetActivationKey = async () => {
-    if (!editingUser || activationKey === "" || creditAmount === "") return;
-    setIsManagingKey(true);
+  const handleAddKey = async () => {
+    if (!editingUser || newActivationKey === "" || newCreditAmount === "") return;
+    setIsAddingKey(true);
     
-    const result = await setActivationKeyAction({
+    const result = await addActivationKeyAction({
         email: editingUser.email,
-        activationKey: activationKey,
-        credits: Number(creditAmount),
+        activationKey: newActivationKey,
+        credits: Number(newCreditAmount),
     });
 
     if (result.success) {
         toast({ title: "Success", description: result.message });
         fetchUsers();
-        setEditingUser(null);
+        setNewActivationKey("");
+        setNewCreditAmount("");
     } else {
         toast({ variant: "destructive", title: "Error", description: result.error });
     }
-    setIsManagingKey(false);
+    setIsAddingKey(false);
   }
+  
+  const handleDeleteKey = async (key: string) => {
+    if(!editingUser) return;
+    const result = await deleteActivationKeyAction({ email: editingUser.email, key });
+     if (result.success) {
+        toast({ title: "Success", description: result.message });
+        fetchUsers();
+    } else {
+        toast({ variant: "destructive", title: "Error", description: result.error });
+    }
+  }
+
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -246,8 +259,8 @@ export default function UserManagementPage() {
                 if (!isOpen) { 
                     setEditingUser(null);
                     setSecretCode('');
-                    setActivationKey('');
-                    setCreditAmount('');
+                    setNewActivationKey('');
+                    setNewCreditAmount('');
                 }
             }}>
               <Table>
@@ -284,10 +297,7 @@ export default function UserManagementPage() {
                         <TableCell>{user.credits ?? 'N/A'}</TableCell>
                         <TableCell className="text-right space-x-2">
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => {
-                                setEditingUser(user);
-                                setCreditAmount(user.credits ?? 0);
-                            }}>
+                            <Button variant="outline" size="sm" onClick={() => setEditingUser(user)}>
                                 <Edit className="mr-2 h-3 w-3" />
                                 Manage
                             </Button>
@@ -329,12 +339,12 @@ export default function UserManagementPage() {
                   )}
                 </TableBody>
               </Table>
-              <DialogContent>
+              <DialogContent className="sm:max-w-3xl">
                   <DialogHeader>
                       <DialogTitle>Manage User: {editingUser?.name}</DialogTitle>
                       <DialogDescription>{editingUser?.email}</DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
+                  <div className="grid gap-6 py-4 max-h-[60vh] overflow-y-auto pr-4">
                       <div className="space-y-3">
                           <h4 className="font-medium">Permissions</h4>
                           <div className="space-y-2">
@@ -353,20 +363,59 @@ export default function UserManagementPage() {
                           </div>
                       </div>
                       <Separator />
-                       <div className="space-y-3">
-                          <h4 className="font-medium">Set Activation Key & Credits</h4>
-                            <div className="space-y-2">
-                                <Label htmlFor="activation-key">Activation Key (e.g., 256-bit hash)</Label>
-                                <Input id="activation-key" type="text" value={activationKey} onChange={(e) => setActivationKey(e.target.value)} placeholder="Enter a secure key" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="credits">Associated Credits</Label>
-                                <Input id="credits" type="number" value={creditAmount} onChange={(e) => setCreditAmount(e.target.value)} placeholder="e.g., 50" className="w-32" />
-                            </div>
-                            <Button onClick={handleSetActivationKey} disabled={isManagingKey}>
-                                {isManagingKey ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Key className="mr-2 h-4 w-4" />}
-                                Set Credits
-                            </Button>
+                       <div className="space-y-4">
+                          <h4 className="font-medium">Manage Activation Keys</h4>
+                           <Card>
+                            <CardHeader><CardTitle className="text-base">Existing Keys</CardTitle></CardHeader>
+                            <CardContent>
+                                {editingUser?.activationKeys && editingUser.activationKeys.length > 0 ? (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Key</TableHead>
+                                                <TableHead>Credits</TableHead>
+                                                <TableHead className="text-right">Action</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {editingUser.activationKeys.map((keyObj) => (
+                                                <TableRow key={keyObj.key}>
+                                                    <TableCell className="font-mono text-xs">{keyObj.key}</TableCell>
+                                                    <TableCell>{keyObj.credits}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteKey(keyObj.key)}>
+                                                            <Trash2 className="mr-2 h-3 w-3" />
+                                                            Delete
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">No activation keys found for this user.</p>
+                                )}
+                            </CardContent>
+                           </Card>
+                          
+                           <Card>
+                            <CardHeader><CardTitle className="text-base">Add New Key</CardTitle></CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="new-activation-key">New Activation Key</Label>
+                                    <Input id="new-activation-key" value={newActivationKey} onChange={(e) => setNewActivationKey(e.target.value)} placeholder="Enter a unique secure key" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="new-credits">Credits</Label>
+                                    <Input id="new-credits" type="number" value={newCreditAmount} onChange={(e) => setNewCreditAmount(e.target.value)} placeholder="e.g., 50" className="w-32" />
+                                </div>
+                                <Button onClick={handleAddKey} disabled={isAddingKey || !newActivationKey || !newCreditAmount}>
+                                    {isAddingKey && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Add Key
+                                </Button>
+                            </CardContent>
+                           </Card>
                       </div>
                   </div>
               </DialogContent>
@@ -434,13 +483,12 @@ export default function UserManagementPage() {
                                         <Input id="picture" type="file" accept="image/png, image/jpeg" onChange={handleFileChange} />
                                         {selectedFile && <div className="text-sm text-muted-foreground">Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</div>}
                                       </div>
-                                      <DialogFooter>
-                                        <DialogClose asChild><Button type="button" variant="secondary" onClick={() => setEditingMember(null)}>Cancel</Button></DialogClose>
+                                      
                                         <Button type="submit" disabled={isUpdating}>
                                             {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Save Changes
                                         </Button>
-                                      </DialogFooter>
+                                      
                                     </form>
                                   </Form>
                                 </DialogContent>

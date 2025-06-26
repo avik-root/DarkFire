@@ -2,18 +2,23 @@
 "use client";
 
 import Link from 'next/link';
-import { ShieldAlert, LogOut, ShieldCheck, HardHat } from 'lucide-react';
+import { ShieldAlert, LogOut, ShieldCheck, HardHat, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
-export default function Header() {
+export default function Header({ logoUrl }: { logoUrl: string | null }) {
   const { isAuthenticated, logout, user, isAdmin } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 py-4 px-8 border-b border-card bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2 text-2xl font-headline text-primary hover:text-primary/80 transition-colors">
-          <ShieldAlert className="h-8 w-8" />
+          {logoUrl ? (
+            <Image src={logoUrl} alt="DarkFire Logo" width={32} height={32} className="h-8 w-8 object-contain" unoptimized />
+          ) : (
+            <ShieldAlert className="h-8 w-8" />
+          )}
           <h1>DarkFire</h1>
         </Link>
         <nav className="hidden md:flex gap-6 text-sm font-medium">
@@ -33,12 +38,20 @@ export default function Header() {
                   </Link>
                 </Button>
               ) : (
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/playground">
-                    <HardHat className="mr-2 h-4 w-4" />
-                    Playground
-                  </Link>
-                </Button>
+                <>
+                    <Button asChild variant="outline" size="sm">
+                        <Link href="/purchase">
+                            <Heart className="mr-2 h-4 w-4" />
+                            Purchase Key
+                        </Link>
+                    </Button>
+                    <Button asChild variant="ghost" size="sm">
+                    <Link href="/playground">
+                        <HardHat className="mr-2 h-4 w-4" />
+                        Playground
+                    </Link>
+                    </Button>
+                </>
               )}
               <Button onClick={logout} variant="outline" size="sm">
                 <LogOut className="mr-2 h-4 w-4" />

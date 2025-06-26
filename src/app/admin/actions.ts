@@ -5,9 +5,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { getUsers as getUsersFromFile, deleteUserByEmail, updateUserCodeGenerationByEmail, setActivationKeyByEmail } from "@/lib/auth";
+import { getUsers as getUsersFromFile, deleteUserByEmail, updateUserCodeGenerationByEmail, addActivationKeyByEmail, deleteActivationKeyForEmail, updateUserTwoFactor } from "@/lib/auth";
 import type { UpdateAdminSchema } from "@/lib/auth-shared";
-import type { User } from '@/lib/auth-shared';
+import type { User, PublicUser } from '@/lib/auth-shared';
 
 const dataDir = path.join(process.cwd(), 'src', 'data');
 
@@ -66,24 +66,43 @@ export async function manageUserPermissionAction(data: unknown) {
     }
 }
 
-const SetActivationKeySchema = z.object({
+const AddActivationKeySchema = z.object({
     email: z.string().email(),
     activationKey: z.string().min(10, "Activation key must be at least 10 characters."),
     credits: z.number().int().min(1, "Credits must be at least 1."),
 });
 
-export async function setActivationKeyAction(data: unknown) {
-    const result = SetActivationKeySchema.safeParse(data);
+export async function addActivationKeyAction(data: unknown) {
+    const result = AddActivationKeySchema.safeParse(data);
     if (!result.success) {
         return { success: false, error: result.error.errors.map(e => e.message).join(', ') };
     }
     
     try {
-        await setActivationKeyByEmail(result.data.email, result.data.activationKey, result.data.credits);
-        return { success: true, message: `Activation key for ${result.data.email} has been set.` };
+        await addActivationKeyByEmail(result.data.email, result.data.activationKey, result.data.credits);
+        return { success: true, message: `Activation key for ${result.data.email} has been added.` };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
+}
+
+const DeleteActivationKeySchema = z.object({
+  email: z.string().email(),
+  key: z.string(),
+});
+
+export async function deleteActivationKeyAction(data: unknown): Promise<{success: boolean, message?: string, error?: string}> {
+  const result = DeleteActivationKeySchema.safeParse(data);
+  if (!result.success) {
+    return { success: false, error: "Invalid data provided for key deletion." };
+  }
+
+  try {
+    await deleteActivationKeyForEmail(result.data.email, result.data.key);
+    return { success: true, message: "Activation key deleted successfully." };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 
@@ -284,6 +303,52 @@ export async function updateAdminProfileAction(userId: string, data: z.infer<typ
     }
 }
 
+const AdminTwoFactorSchema = z.object({
+    email: z.string().email(),
+    enabled: z.boolean(),
+    pin: z.string().optional(),
+    password: z.string().min(1, "Password is required to change 2FA settings."),
+}).refine(data => {
+    if (data.enabled) {
+        return data.pin && data.pin.length === 6 && /^\d+$/.test(data.pin);
+    }
+    return true;
+}, {
+    message: "A 6-digit PIN is required to enable.",
+    path: ["pin"],
+});
+
+export async function updateAdminTwoFactorAction(data: unknown): Promise<{ success: boolean; error?: string; message?: string, user?: PublicUser }> {
+    const result = AdminTwoFactorSchema.safeParse(data);
+    if (!result.success) {
+        return { success: false, error: result.error.errors.map(e => e.message).join(', ') };
+    }
+
+    const { email, enabled, pin, password: currentPassword } = result.data;
+    
+    try {
+        const admins = JSON.parse(await fs.readFile(adminFilePath, 'utf-8')) as User[];
+        const adminIndex = admins.findIndex(admin => admin.email === email);
+        if (adminIndex === -1) {
+            return { success: false, error: "Admin user not found." };
+        }
+
+        const admin = admins[adminIndex];
+        const isPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+        if (!isPasswordValid) {
+            return { success: false, error: "Incorrect password." };
+        }
+
+        const updatedUser = await updateUserTwoFactor(email, pin || null, enabled);
+        const { password, ...publicUser } = updatedUser;
+        const message = enabled ? "2-step verification enabled." : "2-step verification disabled.";
+        return { success: true, user: publicUser, message };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+
 // --- Analytics Actions ---
 const analyticsFilePath = path.join(dataDir, 'analytics.json');
 
@@ -365,4 +430,53 @@ export async function getActivityLogAction() {
     } catch (error: any) {
         return { success: false, error: error.message };
     }
+}
+
+// --- Logo Management Action ---
+export async function uploadLogoAction(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
+  const file = formData.get('logo') as File;
+
+  if (!file || file.size === 0) {
+    return { success: false, error: 'No file was selected for upload.' };
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    return { success: false, error: 'File is too large. Maximum size is 2MB.' };
+  }
+
+  const allowedTypes = ['image/png', 'image/jpeg'];
+  if (!allowedTypes.includes(file.type)) {
+    return { success: false, error: 'Only .png and .jpg files are allowed.' };
+  }
+
+  const extension = file.type.split('/')[1];
+  const filename = `logo.${extension}`;
+  const publicDir = path.join(process.cwd(), 'public');
+  const logoPath = path.join(publicDir, filename);
+  const logoInfoPath = path.join(publicDir, 'logo-info.json');
+
+  try {
+    await fs.mkdir(publicDir, { recursive: true });
+
+    // Clean up old logo files to ensure only one exists
+    const filesInPublic = await fs.readdir(publicDir);
+    for (const f of filesInPublic) {
+      if (f.startsWith('logo.')) {
+        await fs.unlink(path.join(publicDir, f));
+      }
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await fs.writeFile(logoPath, buffer);
+
+    const logoInfo = {
+      url: `/${filename}`,
+    };
+    await fs.writeFile(logoInfoPath, JSON.stringify(logoInfo));
+
+    return { success: true, message: 'Logo uploaded successfully!' };
+  } catch (error: any) {
+    console.error('Logo upload error:', error);
+    return { success: false, error: 'Server error during logo upload.' };
+  }
 }

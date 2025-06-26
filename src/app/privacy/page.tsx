@@ -42,7 +42,7 @@ export default function PrivacyPage({}: {}) {
 
         <div>
             <h2 className="text-2xl font-headline text-primary mt-8 mb-2">6. Contact Us</h2>
-            <p>If you have questions or comments about this Privacy Policy, please contact us at: <a href="mailto:contact@darkfire.dev" className="text-primary hover:underline">contact@darkfire.dev</a></p>
+            <p>If you have questions or comments about this Privacy Policy, please contact us at: <a href="mailto:mintfire.official@gmail.com" className="text-primary hover:underline">mintfire.official@gmail.com</a></p>
         </div>
       </div>
     </div>

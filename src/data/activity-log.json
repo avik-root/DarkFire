@@ -1,0 +1,14 @@
+[
+  {
+    "timestamp": "2025-06-25T20:31:50.494Z",
+    "status": "success",
+    "language": "PowerShell",
+    "payloadType": "Reverse Shell"
+  },
+  {
+    "timestamp": "2025-06-25T20:30:59.391Z",
+    "status": "success",
+    "language": "PowerShell",
+    "payloadType": "Reverse Shell"
+  }
+]
