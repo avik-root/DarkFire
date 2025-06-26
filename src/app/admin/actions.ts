@@ -72,15 +72,16 @@ const AddActivationKeySchema = z.object({
     credits: z.number().int().min(1, "Credits must be at least 1."),
 });
 
-export async function addActivationKeyAction(data: unknown) {
+export async function addActivationKeyAction(data: unknown): Promise<{ success: boolean; message?: string; error?: string; user?: PublicUser }> {
     const result = AddActivationKeySchema.safeParse(data);
     if (!result.success) {
         return { success: false, error: result.error.errors.map(e => e.message).join(', ') };
     }
     
     try {
-        await addActivationKeyByEmail(result.data.email, result.data.activationKey, result.data.credits);
-        return { success: true, message: `Activation key for ${result.data.email} has been added.` };
+        const updatedUser = await addActivationKeyByEmail(result.data.email, result.data.activationKey, result.data.credits);
+        const { password, ...publicUser } = updatedUser;
+        return { success: true, message: `Activation key for ${result.data.email} has been added.`, user: publicUser };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -91,15 +92,16 @@ const DeleteActivationKeySchema = z.object({
   key: z.string(),
 });
 
-export async function deleteActivationKeyAction(data: unknown): Promise<{success: boolean, message?: string, error?: string}> {
+export async function deleteActivationKeyAction(data: unknown): Promise<{success: boolean, message?: string, error?: string, user?: PublicUser}> {
   const result = DeleteActivationKeySchema.safeParse(data);
   if (!result.success) {
     return { success: false, error: "Invalid data provided for key deletion." };
   }
 
   try {
-    await deleteActivationKeyForEmail(result.data.email, result.data.key);
-    return { success: true, message: "Activation key deleted successfully." };
+    const updatedUser = await deleteActivationKeyForEmail(result.data.email, result.data.key);
+    const { password, ...publicUser } = updatedUser;
+    return { success: true, message: "Activation key deleted successfully.", user: publicUser };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

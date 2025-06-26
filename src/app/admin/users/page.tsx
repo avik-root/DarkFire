@@ -168,9 +168,10 @@ export default function UserManagementPage() {
         credits: Number(newCreditAmount),
     });
 
-    if (result.success) {
+    if (result.success && result.user) {
         toast({ title: "Success", description: result.message });
         fetchUsers();
+        setEditingUser(result.user);
         setNewActivationKey("");
         setNewCreditAmount("");
     } else {
@@ -182,9 +183,10 @@ export default function UserManagementPage() {
   const handleDeleteKey = async (key: string) => {
     if(!editingUser) return;
     const result = await deleteActivationKeyAction({ email: editingUser.email, key });
-     if (result.success) {
+     if (result.success && result.user) {
         toast({ title: "Success", description: result.message });
         fetchUsers();
+        setEditingUser(result.user);
     } else {
         toast({ variant: "destructive", title: "Error", description: result.error });
     }
