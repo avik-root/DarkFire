@@ -122,6 +122,18 @@ export async function handleGeneratePayload(input: GeneratePayloadInput): Promis
         return { error: "User not found." };
     }
 
+    const settingsFilePath = path.join(dataDir, 'settings.json');
+    try {
+        const settingsData = await fs.readFile(settingsFilePath, 'utf-8');
+        const settings = JSON.parse(settingsData);
+        if (settings.maintenanceMode && user.role !== 'admin') {
+            return { error: "The site is currently under maintenance. Code generation is temporarily disabled." };
+        }
+    } catch (e) {
+        // If settings file doesn't exist, ignore and continue.
+        console.warn("Could not read settings.json for maintenance check, proceeding as normal.");
+    }
+
     if (user.role === 'user' && (user.credits === undefined || user.credits <= 0)) {
         return { error: "You have no credits left. Please use an activation key." };
     }
@@ -164,5 +176,16 @@ export async function redeemActivationKeyAction(data: { email: string, key: stri
         return { success: true, message: "Credits activated successfully!", user: publicUser };
     } catch (error: any) {
         return { success: false, message: error.message || "Failed to redeem key." };
+    }
+}
+
+export async function getMaintenanceStatusAction(): Promise<boolean> {
+    const settingsFilePath = path.join(dataDir, 'settings.json');
+    try {
+        const data = await fs.readFile(settingsFilePath, 'utf-8');
+        const settings = JSON.parse(data);
+        return !!settings.maintenanceMode;
+    } catch (error) {
+        return false;
     }
 }
