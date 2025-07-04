@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,22 +21,73 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { updateUserTwoFactorAction } from "@/app/playground/actions";
+
+const TwoFactorFormSchema = z.object({
+  pin: z.string().optional(),
+  enabled: z.boolean(),
+  password: z.string(),
+}).refine((data) => {
+    if (data.enabled) {
+        return data.pin && /^\d{6}$/.test(data.pin);
+    }
+    return true;
+}, {
+    message: "A 6-digit PIN is required to enable.",
+    path: ["pin"],
+}).refine(data => data.enabled ? !!data.password : true, {
+    message: "Your password is required to enable 2FA.",
+    path: ["password"],
+});
+
+type TwoFactorFormValues = z.infer<typeof TwoFactorFormSchema>;
+
 
 export default function ProfileSettings() {
-  const { user, logout } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { toast } = useToast();
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-
-  const handleUpdatePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, this would call a server action
-    toast({
-      title: "Success",
-      description: "Password updated successfully (simulation).",
-    });
-  };
   
+  const form = useForm<TwoFactorFormValues>({
+    resolver: zodResolver(TwoFactorFormSchema),
+    defaultValues: {
+      pin: "",
+      enabled: user?.twoFactorEnabled ?? false,
+      password: "",
+    }
+  });
+  
+  const isEnabled = form.watch("enabled");
+
+  const onSubmit = async (values: TwoFactorFormValues) => {
+    if (!user) return;
+    
+    // This is a simplified check for the prototype. In a real app,
+    // you'd send the password to the server to be verified against the hash.
+    if (values.enabled && !values.password) {
+        form.setError("password", { message: "Password is required to enable 2FA." });
+        return;
+    }
+
+    const result = await updateUserTwoFactorAction({
+      email: user.email,
+      enabled: values.enabled,
+      pin: values.pin,
+      password: values.password, // Pass password for server-side validation (simulated here)
+    });
+    
+    if (result.success && result.user) {
+      updateUser(result.user);
+      toast({ title: "Success", description: result.message });
+      form.reset({ pin: "", enabled: result.user.twoFactorEnabled, password: "" });
+    } else {
+      toast({ variant: "destructive", title: "Error", description: result.message });
+    }
+  };
+
   const handleDeleteAccount = () => {
     // In a real app, this would call a server action
     toast({
@@ -53,41 +105,58 @@ export default function ProfileSettings() {
     <div className="max-w-4xl mx-auto space-y-8">
         <Card>
             <CardHeader>
-                <CardTitle>Update Password</CardTitle>
-                <CardDescription>Change your account password here. Choose a strong, unique password.</CardDescription>
+                <CardTitle>Security Settings</CardTitle>
+                <CardDescription>Manage 2-step verification for your account.</CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-sm">
-                    <div className="grid gap-2">
-                        <Label htmlFor="current-password">Current Password</Label>
-                        <div className="relative">
-                        <Input id="current-password" type={showCurrentPassword ? "text" : "password"} placeholder="••••••••" />
-                        <button
-                            type="button"
-                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                            aria-label={showCurrentPassword ? "Hide password" : "Show password"}
-                            >
-                            {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </button>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-sm">
+                  <FormField
+                    control={form.control}
+                    name="enabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                          <FormLabel>Enable 2-Step Verification</FormLabel>
+                          <FormDescription>Secure your account with a 6-digit PIN on login.</FormDescription>
                         </div>
-                    </div>
-                        <div className="grid gap-2">
-                        <Label htmlFor="new-password">New Password</Label>
-                        <div className="relative">
-                        <Input id="new-password" type={showNewPassword ? "text" : "password"} placeholder="••••••••" />
-                            <button
-                            type="button"
-                            onClick={() => setShowNewPassword(!showNewPassword)}
-                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                            aria-label={showNewPassword ? "Hide password" : "Show password"}
-                            >
-                            {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </button>
-                        </div>
-                    </div>
-                    <Button type="submit">Update Password</Button>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  {isEnabled && (
+                    <FormField
+                      control={form.control}
+                      name="pin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>6-Digit PIN</FormLabel>
+                          <FormControl><Input type="password" maxLength={6} placeholder="Enter a 6-digit PIN" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  {isEnabled && (
+                     <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Current Password</FormLabel>
+                          <FormControl><Input type="password" placeholder="Enter password to confirm" {...field} /></FormControl>
+                           <FormDescription>Required to enable 2FA.</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                  </Button>
                 </form>
+              </Form>
             </CardContent>
         </Card>
 

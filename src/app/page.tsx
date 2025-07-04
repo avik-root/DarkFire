@@ -64,9 +64,7 @@ export default function Home() {
   return (
     <div className="space-y-20 md:space-y-32">
       <section 
-        className="home-background text-center"
-        style={{ '--bg-image': "url('https://placehold.co/1920x1080.png')" } as React.CSSProperties}
-        data-ai-hint="futuristic cyberpunk terminal"
+        className="text-center"
       >
         <div className="relative z-10 opacity-0 animate-fade-in-up">
           <h1 className="text-6xl md:text-8xl font-headline tracking-tighter text-primary">

@@ -182,6 +182,8 @@
 
 .pc-avatar-content .avatar {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
   position: absolute;
   left: 50%;
   transform: translateX(-50%) scale(1);
@@ -436,7 +438,7 @@
   }
   .pc-social-links svg {
     width: 16px;
-    height: 16px;
+    height: 18px;
   }
 }
 

@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
 
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/signup');
   const isAdminPage = pathname.startsWith('/admin');
-  const isPlaygroundPage = pathname.startsWith('/playground');
+  const isPlaygroundPage = pathname.startsWith('/playground') || pathname.startsWith('/purchase');
   const isRequestAccessPage = pathname.startsWith('/request-access');
 
   if (!userCookie) {
@@ -69,5 +69,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/login', '/signup', '/playground', '/request-access'],
+  matcher: ['/admin/:path*', '/login', '/signup', '/playground', '/request-access', '/purchase'],
 };
